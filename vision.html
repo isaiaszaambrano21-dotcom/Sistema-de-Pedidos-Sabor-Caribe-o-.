@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sabor Caribeño - Sistema de Gestión</title>
+</head>
+<body>
+
+    <header>
+        <h1>Sabor Caribeño</h1>
+        <p>Sistema de gestión de pedidos</p>
+        
+
+        <nav>
+            <ul>
+                <li>Resumen / Dashboard</li>
+                <li>Mensajes </li>
+                <li>Productos</li>
+                <li>Órdenes</li>
+                <li>Clientes</li>
+                <li>Ajustes</li>
+            </ul>
+        </nav>
+
+        <section id="usuario-perfil">
+            <p>Bienvenido de vuelta, Admin1</p>
+            <form role="search">
+                <label for="buscar">Busqueda:</label>
+                <input type="search" id="buscar" name="buscar" placeholder="Buscar reporte o producto...">
+                <button type="submit">Buscar</button>
+            </form>
+        </section>
+    </header>
+
+    <main>
+        <section id="resumen">
+            <h2>Resumen de Ventas</h2>
+            <article>
+                <h3>Ventas Totales</h3>
+                <p>134 Órdenes</p>
+                <p>Monto: <strong>$9,328.55</strong></p>
+                <p>Crecimiento: +15.6% esta semana</p>
+            </article>
+
+            <article>
+                <h3>Pérdidas</h3>
+                <p>En procesos</p>
+                <p>Monto: <strong>963.00</strong></p>
+                <p>Tendencia: -12.7%</p>
+            </article>
+
+            <article>
+                <h3>Gráfica de Ventas</h3>
+                <p>[Aquí se ubicará el gráfico de barras de ingresos vs costos]</p>
+                <label for="periodo">Periodo:</label>
+                <select id="periodo">
+                    <option>Últimos 14 días</option>
+                    <option>Últimos 30 días</option>
+                </select>
+            </article>
+
+            <article>
+                <h3>Productos más vendidos</h3>
+                <ul>
+                    <li>Sancocho de pollo </li>
+                    <li>Corvina con Patacones</li>
+                    <li>Arroz con Pollo</li>
+                </ul>
+            </article>
+        </section>
+
+        <hr>
+
+        <section id="productos">
+            <h2>Gestión de Productos</h2>
+            <button type="button">Añadir Productos +</button>
+            
+            <table>
+                <caption>Lista de productos disponibles en el menú</caption>
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Estado del Pedido</th>
+                        <th>Categorías</th>
+                        <th>Precio (B/.)</th>
+                        <th>Número de Serie</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Sancocho Panameño</td>
+                        <td>Disponible</td>
+                        <td>Almuerzo</td>
+                        <td>3.75 / 4.75</td>
+                        <td>39842-231</td>
+                        <td><button>...</button></td>
+                    </tr>
+                    <tr>
+                        <td>Ceviche Panameño</td>
+                        <td>Agotado</td>
+                        <td>Entrada</td>
+                        <td>4.00 / 6.00</td>
+                        <td>39842-231</td>
+                        <td><button>...</button></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <nav aria-label="Paginación de productos">
+                <p>Página: 1 | <strong>2</strong> | 3 | 4 | 5 ... 20</p>
+            </nav>
+        </section>
+
+        <hr>
+
+        <section id="ajustes">
+            <h2>Ajustes del Sistema</h2>
+            <aside>
+                <nav>
+                    <ul>
+                        <li><strong>Mi cuenta</strong></li>
+                        <li>Apariencia</li>
+                        <li>Privacidad</li>
+                        <li>Integraciones</li>
+                        <li>Notificaciones</li>
+                        <li>Idioma</li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <article>
+                <h3>Mi cuenta</h3>
+                <form>
+                    <div>
+                        <label for="username">Nombre de usuario:</label>
+                        <input type="text" id="username" name="username" value="Admin1" readonly>
+                        <button type="button">Editar</button>
+                    </div>
+
+                    <div>
+                        <label for="password">Contraseña:</label>
+                        <input type="password" id="password" name="password" value="**********">
+                    </div>
+
+                    <div>
+                        <label for="rol">Rol:</label>
+                        <input type="text" id="rol" name="rol" value="Admin1" disabled>
+                    </div>
+
+                    <button type="submit">Cambiar contraseña</button>
+                </form>
+            </article>
+        </section>
+
+        <hr>
+
+        <section id="nuevo-pedido">
+            <h2>Registrar Nuevo Pedido (Meseros)</h2>
+            <form>
+                <fieldset>
+                    <legend>Detalles de la Mesa</legend>
+                    <label for="mesa">Número de Mesa:</label>
+                    <input type="number" id="mesa" name="mesa" required min="1">
+
+                    <label for="metodo-pago">Método de Pago:</label>
+                    <select id="metodo-pago" name="metodo-pago">
+                        <option value="efectivo">Efectivo</option>
+                        <option value="tarjeta">Tarjeta</option>
+                        <option value="yappy">Yappy</option>
+                    </select>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Personalización del Plato</legend>
+                    <label for="plato">Seleccionar Plato:</label>
+                    <input list="menu-platos" id="plato" name="plato">
+                    <datalist id="menu-platos">
+                        <option value="Sancocho">
+                        <option value="Corvina">
+                        <option value="Tamales">
+                    </datalist>
+
+                    <label for="notas">Notas/Personalización:</label>
+                    <textarea id="notas" name="notas" placeholder="Ecsribir aqui..."></textarea>
+                </fieldset>
+
+                <button type="submit">Confirmar y Enviar a Cocina</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <nav>
+            <ul>
+                <li>Ayuda ?</li>
+                <li>Contactanos</li>
+            </ul>
+        </nav>
+ 
+    </footer>
+
+</body>
+</html>
