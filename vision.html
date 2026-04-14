@@ -9,33 +9,50 @@
 
     <header>
         <h1>Sabor Caribeño</h1>
-        <p>Sistema de gestión de pedidos</p>
+        <p>Sistema de gestión de pedidos - Panel Administrativo</p>
         
-
-        <nav>
+        <nav aria-label="Menú principal">
             <ul>
-                <li>Resumen / Dashboard</li>
-                <li>Mensajes </li>
-                <li>Productos</li>
-                <li>Órdenes</li>
-                <li>Clientes</li>
-                <li>Ajustes</li>
+                <li><a href="#resumen">Resumen / Dashboard</a></li>
+                <li><a href="#productos">Productos</a></li>
+                <li><a href="#ordenes">Órdenes</a></li>
+                <li><a href="#clientes">Clientes</a></li>
+                <li><a href="#ajustes">Ajustes</a></li>
             </ul>
         </nav>
 
-        <section id="usuario-perfil">
-            <p>Bienvenido de vuelta, Admin1</p>
-            <form role="search">
-                <label for="buscar">Busqueda:</label>
+        <section id="usuario-perfil" aria-labelledby="titulo-usuario">
+            <h2 id="titulo-usuario">Perfil de usuario</h2>
+            <p>Bienvenido de vuelta, <strong>Admin1</strong></p>
+
+            <form role="search" aria-label="Formulario de búsqueda">
+                <label for="buscar">Búsqueda:</label>
                 <input type="search" id="buscar" name="buscar" placeholder="Buscar reporte o producto...">
                 <button type="submit">Buscar</button>
             </form>
         </section>
     </header>
 
+    <!-- LOGIN AGREGADO -->
+    <section id="login" aria-labelledby="titulo-login">
+        <h2 id="titulo-login">Inicio de Sesión</h2>
+
+        <form>
+            <label for="usuario">Usuario:</label>
+            <input type="text" id="usuario">
+
+            <label for="clave">Contraseña:</label>
+            <input type="password" id="clave">
+
+            <button type="submit">Ingresar</button>
+        </form>
+    </section>
+
     <main>
-        <section id="resumen">
-            <h2>Resumen de Ventas</h2>
+
+        <section id="resumen" aria-labelledby="titulo-resumen">
+            <h2 id="titulo-resumen">Resumen de Ventas</h2>
+
             <article>
                 <h3>Ventas Totales</h3>
                 <p>134 Órdenes</p>
@@ -46,7 +63,7 @@
             <article>
                 <h3>Pérdidas</h3>
                 <p>En procesos</p>
-                <p>Monto: <strong>963.00</strong></p>
+                <p>Monto: <strong>$963.00</strong></p>
                 <p>Tendencia: -12.7%</p>
             </article>
 
@@ -63,7 +80,7 @@
             <article>
                 <h3>Productos más vendidos</h3>
                 <ul>
-                    <li>Sancocho de pollo </li>
+                    <li>Sancocho de pollo - $6.2k</li>
                     <li>Corvina con Patacones</li>
                     <li>Arroz con Pollo</li>
                 </ul>
@@ -72,20 +89,42 @@
 
         <hr>
 
-        <section id="productos">
-            <h2>Gestión de Productos</h2>
-            <button type="button">Añadir Productos +</button>
+        <!-- ÓRDENES -->
+        <section id="ordenes" aria-labelledby="titulo-ordenes">
+            <h2 id="titulo-ordenes">Órdenes por Mesa</h2>
+
+            <article>
+                <h3>Mesa 1</h3>
+                <p>Estado: En preparación</p>
+            </article>
+
+            <article>
+                <h3>Mesa 2</h3>
+                <p>Estado: Listo</p>
+            </article>
+
+            <article>
+                <h3>Mesa 3</h3>
+                <p>Estado: Entregado</p>
+            </article>
+        </section>
+
+        <hr>
+
+        <section id="productos" aria-labelledby="titulo-productos">
+            <h2 id="titulo-productos">Gestión de Platillos del Menú</h2>
+            <button type="button">Añadir Platillos +</button>
             
             <table>
-                <caption>Lista de productos disponibles en el menú</caption>
+                <caption>Lista de platillos disponibles en el menú</caption>
                 <thead>
                     <tr>
-                        <th>Nombre</th>
-                        <th>Estado del Pedido</th>
-                        <th>Categorías</th>
-                        <th>Precio (B/.)</th>
-                        <th>Número de Serie</th>
-                        <th>Acciones</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">Estado del Pedido</th>
+                        <th scope="col">Categorías</th>
+                        <th scope="col">Precio (B/.)</th>
+                        <th scope="col">Número de ID</th>
+                        <th scope="col">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,10 +154,33 @@
 
         <hr>
 
-        <section id="ajustes">
-            <h2>Ajustes del Sistema</h2>
+        <!-- VENTAS DETALLADAS -->
+        <section id="ventas" aria-labelledby="titulo-ventas">
+            <h2 id="titulo-ventas">Registro de Ventas Diarias</h2>
+
+            <article>
+                <h3>Venta #1</h3>
+                <p>Fecha: 10/04/2026</p>
+                <p>Productos: Sancocho + bebida</p>
+                <p>Monto: $8.50</p>
+                <p>Método de pago: Yappy</p>
+            </article>
+
+            <article>
+                <h3>Venta #2</h3>
+                <p>Fecha: 10/04/2026</p>
+                <p>Productos: Corvina frita</p>
+                <p>Monto: $12.00</p>
+                <p>Método de pago: Efectivo</p>
+            </article>
+        </section>
+
+        <hr>
+
+        <section id="ajustes" aria-labelledby="titulo-ajustes">
+            <h2 id="titulo-ajustes">Ajustes del Sistema</h2>
             <aside>
-                <nav>
+                <nav aria-label="Menú de ajustes">
                     <ul>
                         <li><strong>Mi cuenta</strong></li>
                         <li>Apariencia</li>
@@ -133,21 +195,14 @@
             <article>
                 <h3>Mi cuenta</h3>
                 <form>
-                    <div>
-                        <label for="username">Nombre de usuario:</label>
-                        <input type="text" id="username" name="username" value="Admin1" readonly>
-                        <button type="button">Editar</button>
-                    </div>
+                    <label for="username">Nombre de usuario:</label>
+                    <input type="text" id="username" value="Admin1" readonly>
 
-                    <div>
-                        <label for="password">Contraseña:</label>
-                        <input type="password" id="password" name="password" value="**********">
-                    </div>
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" value="********">
 
-                    <div>
-                        <label for="rol">Rol:</label>
-                        <input type="text" id="rol" name="rol" value="Admin1" disabled>
-                    </div>
+                    <label for="rol">Rol:</label>
+                    <input type="text" id="rol" value="Administrador" disabled>
 
                     <button type="submit">Cambiar contraseña</button>
                 </form>
@@ -156,49 +211,54 @@
 
         <hr>
 
-        <section id="nuevo-pedido">
-            <h2>Registrar Nuevo Pedido (Meseros)</h2>
+        <section id="nuevo-pedido" aria-labelledby="titulo-pedido">
+            <h2 id="titulo-pedido">Registrar Nuevo Pedido (Meseros)</h2>
+
             <form>
+
                 <fieldset>
                     <legend>Detalles de la Mesa</legend>
+
                     <label for="mesa">Número de Mesa:</label>
-                    <input type="number" id="mesa" name="mesa" required min="1">
+                    <input type="number" id="mesa" required min="1">
 
                     <label for="metodo-pago">Método de Pago:</label>
-                    <select id="metodo-pago" name="metodo-pago">
-                        <option value="efectivo">Efectivo</option>
-                        <option value="tarjeta">Tarjeta</option>
-                        <option value="yappy">Yappy</option>
+                    <select id="metodo-pago">
+                        <option>Efectivo</option>
+                        <option>Tarjeta</option>
+                        <option>Yappy</option>
                     </select>
                 </fieldset>
 
                 <fieldset>
                     <legend>Personalización del Plato</legend>
+
                     <label for="plato">Seleccionar Plato:</label>
-                    <input list="menu-platos" id="plato" name="plato">
+                    <input list="menu-platos" id="plato">
+
                     <datalist id="menu-platos">
                         <option value="Sancocho">
                         <option value="Corvina">
                         <option value="Tamales">
                     </datalist>
 
-                    <label for="notas">Notas/Personalización:</label>
-                    <textarea id="notas" name="notas" placeholder="Ecsribir aqui..."></textarea>
+                    <label for="notas">Ingredientes / Personalización:</label>
+                    <textarea id="notas" placeholder="Escribir..."></textarea>
                 </fieldset>
 
                 <button type="submit">Confirmar y Enviar a Cocina</button>
             </form>
         </section>
+
     </main>
 
     <footer>
-        <nav>
+        <nav aria-label="Información adicional">
             <ul>
-                <li>Ayuda ?</li>
-                <li>Contactanos</li>
+                <li><a href="#">Ayuda ?</a></li>
+                <li><a href="#">Contáctanos</a></li>
             </ul>
         </nav>
- 
     </footer>
 
 </body>
