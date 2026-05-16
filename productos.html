@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Sabor Caribeño</h1>
+        <div class="perfil-usuario">
+            <img src="logo.png" alt="Logo">
+            <div class="info-user">
+                <p><strong id="nombre-header">Cargando...</strong></p>
+                <small id="rol-header">—</small>
+            </div>
+        </div>
+        <nav>
+            <ul id="nav-menu"></ul>
+        </nav>
+        <button onclick="Auth.cerrar()"
+            style="margin-top:20px; background:#ef4444; color:white; border:none;
+                   padding:12px; border-radius:14px; font-weight:700; cursor:pointer; width:100%;">
+            Cerrar sesión
+        </button>
+    </header>
+
+    <main>
+
+        <div class="card">
+
+            <h2 style="margin-bottom:16px;">Platillos Panameños</h2>
+
+            <input type="text" id="buscador" placeholder="🔍 Buscar platillo..."
+                   oninput="filtrar()" style="margin-bottom:8px;">
+
+            <p id="contador" style="font-size:0.82rem; color:#6b7280; margin-bottom:14px;"></p>
+
+            <div class="tabla-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Imagen</th>
+                        <th>Plato</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th id="col-disponibilidad">Disponibilidad</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-tabla"></tbody>
+            </table>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        const usuario = Auth.requerir('gerente', 'administrador', 'mesero', 'cocinero');
+        if (!usuario) throw new Error('Sin acceso');
+
+        Auth.mostrarUsuario();
+        const rol     = usuario.rol;
+        const puedeEditar = ['gerente', 'administrador'].includes(rol);
+
+        // ── Menú según rol ──
+        const menus = {
+            gerente:       ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','ajustes.html|Ajustes'],
+            administrador: ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','ajustes.html|Ajustes'],
+            mesero:        ['nuevo-pedido.html|Nuevo Pedido','ordenes.html|Mis Órdenes','productos.html|Menú'],
+            cocinero:      ['ordenes.html|Cocina','productos.html|Menú']
+        };
+
+        document.getElementById('nav-menu').innerHTML = (menus[rol] || []).map(item => {
+            const [href, label] = item.split('|');
+            const active = location.pathname.endsWith(href) ? 'class="active"' : '';
+            return `<li><a href="${href}" ${active}>${label}</a></li>`;
+        }).join('');
+
+        // Si no puede editar, ocultar columna
+        if (!puedeEditar) {
+            document.getElementById('col-disponibilidad').style.display = 'none';
+        }
+
+        let todosLosProductos = [];
+
+        function filtrar() {
+            const q = document.getElementById('buscador').value.toLowerCase();
+            const filtrados = todosLosProductos.filter(p => p.nombre.toLowerCase().includes(q));
+            renderTabla(filtrados);
+        }
+
+        function renderTabla(productos) {
+            document.getElementById('contador').textContent =
+                `Mostrando ${productos.length} de ${todosLosProductos.length} productos`;
+
+            document.getElementById('cuerpo-tabla').innerHTML = productos.map(p => `
+                <tr style="${p.disponible ? '' : 'opacity:0.5;'}">
+                    <td><img src="${p.imagen}" alt="${p.nombre}"
+                             onerror="this.src='logo.png'"
+                             style="width:64px; height:52px; border-radius:10px; object-fit:cover;"></td>
+                    <td style="font-weight:500;">${p.nombre}</td>
+                    <td style="color:#9ca3af; font-size:0.85rem;">${p.categoria || '—'}</td>
+                    <td style="font-weight:700;">B/.${p.precio.toFixed(2)}</td>
+                    <td ${!puedeEditar ? 'style="display:none"' : ''}>
+                        ${puedeEditar ? `
+                        <button onclick="toggleDisponible('${p.id}', ${p.disponible})"
+                            style="padding:7px 14px; border:none; border-radius:8px; cursor:pointer;
+                                   font-size:0.8rem; font-weight:700;
+                                   background:${p.disponible ? '#dcfce7' : '#fee2e2'};
+                                   color:${p.disponible ? '#166534' : '#991b1b'};">
+                            ${p.disponible ? '✓ Disponible' : '✗ Agotado'}
+                        </button>` : `
+                        <span style="font-size:0.85rem; color:${p.disponible ? '#22c55e' : '#ef4444'};">
+                            ${p.disponible ? '✓ Disponible' : '✗ Agotado'}
+                        </span>`}
+                    </td>
+                </tr>`).join('');
+        }
+
+        async function toggleDisponible(id, actual) {
+            await Auth.fetch(`/api/productos/${id}`, {
+                method: 'PATCH',
+                body:   JSON.stringify({ disponible: !actual })
+            });
+            cargarProductos();
+        }
+
+        async function cargarProductos() {
+            const data = await Auth.fetch('/api/productos');
+            if (!data || !data.success) return;
+            todosLosProductos = data.productos;
+            renderTabla(todosLosProductos);
+        }
+
+        document.addEventListener('DOMContentLoaded', cargarProductos);
+    </script>
+
+</body>
+</html>

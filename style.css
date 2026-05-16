@@ -1,0 +1,656 @@
+/* ============================================================
+   SABOR CARIBEÑO — style.css
+   Responsivo: celular, tablet, escritorio
+   ============================================================ */
+
+/* 1. FUENTE EXTERNA */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
+/* 2. VARIABLES */
+:root {
+    --naranja-vibrante: linear-gradient(135deg, #ff512f 0%, #dd2476 100%);
+    --naranja-solido:   #ff512f;
+    --azul-caribe:      linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    --fondo-suave:      #f0f9ff;
+    --blanco:           #ffffff;
+    --negro-pro:        #1a1a1a;
+    --texto-gris:       #64748b;
+    --borde:            #e2e8f0;
+    --sombra:           0 10px 20px rgba(0,0,0,0.08);
+    --sidebar-ancho:    260px;
+    --radio-card:       24px;
+}
+
+/* 3. RESET */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--fondo-suave);
+    color: #39537c;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* ============================================================
+   4. FONDO ESPECIAL (login / registro)
+   ============================================================ */
+.fondo-especial {
+    background-image: url('fondo.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* ============================================================
+   5. SIDEBAR / HEADER
+   ============================================================ */
+header {
+    background-color: var(--negro-pro);
+    color: var(--blanco);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+header h1 {
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 20px;
+    background: var(--naranja-vibrante);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+/* PERFIL */
+.perfil-usuario {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255,255,255,0.08);
+    padding: 12px;
+    border-radius: 18px;
+    margin-bottom: 24px;
+}
+
+.perfil-usuario img {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 2px solid var(--naranja-solido);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.info-user p {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--blanco);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.info-user small {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+/* NAV */
+nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+nav ul li a {
+    color: #a0a0a0;
+    text-decoration: none;
+    display: block;
+    padding: 11px 16px;
+    border-radius: 14px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    transition: background 0.25s, color 0.25s, box-shadow 0.25s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+nav ul li a:hover,
+nav ul li a.active {
+    background: var(--naranja-vibrante);
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(255,81,47,0.35);
+}
+
+/* ============================================================
+   6. MAIN
+   ============================================================ */
+main {
+    padding: 20px 16px;
+    flex: 1;
+    min-width: 0; /* evita desbordamiento en flex */
+}
+
+/* Título de sección */
+main h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--negro-pro);
+}
+
+#bienvenida {
+    margin-bottom: 24px;
+}
+
+#bienvenida h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--negro-pro);
+    margin-bottom: 4px;
+}
+
+#bienvenida p {
+    font-size: 0.9rem;
+    color: var(--texto-gris);
+}
+
+/* ============================================================
+   7. GRID DE TARJETAS
+   ============================================================ */
+#resumen {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
+}
+
+/* ============================================================
+   8. TARJETAS
+   ============================================================ */
+.card {
+    background: var(--blanco);
+    padding: 22px;
+    border-radius: var(--radio-card);
+    box-shadow: var(--sombra);
+    width: 100%;
+    overflow: hidden; /* no scroll horizontal en la card */
+}
+
+.card-destacada {
+    background: var(--azul-caribe);
+    color: white;
+}
+
+.card-destacada h3,
+.card-destacada p,
+.card-destacada span {
+    color: rgba(255,255,255,0.9);
+}
+
+.card h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    opacity: 0.75;
+}
+
+.card strong {
+    font-size: 1.8rem;
+    display: block;
+    margin: 8px 0;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-negativo {
+    display: inline-block;
+    background: #fef2f2;
+    color: #ef4444;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Ranking */
+.lista-ranking {
+    list-style: none;
+    margin-top: 8px;
+}
+
+.lista-ranking li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    font-size: 0.88rem;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 8px;
+}
+
+.lista-ranking li:last-child {
+    border-bottom: none;
+}
+
+.lista-ranking li span {
+    color: var(--texto-gris);
+    flex-shrink: 0;
+}
+
+/* Gráfica simulada */
+.grafico-simulado {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 100px;
+    margin-top: 12px;
+    padding: 0 4px;
+}
+
+.barra {
+    flex: 1;
+    background: var(--naranja-vibrante);
+    border-radius: 6px 6px 0 0;
+    min-height: 5%;
+    transition: height 0.5s ease;
+}
+
+/* ============================================================
+   9. TABLA — RESPONSIVA
+   ============================================================ */
+
+/* Contenedor con scroll horizontal SOLO en celular */
+.tabla-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 14px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    /* SIN min-width fijo — se adapta */
+}
+
+thead {
+    background: #f8fafc;
+}
+
+th {
+    text-align: left;
+    padding: 12px 14px;
+    color: var(--texto-gris);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+td {
+    padding: 12px 14px;
+    border-top: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+    vertical-align: middle;
+}
+
+td img {
+    width: 64px;
+    height: 52px;
+    border-radius: 10px;
+    object-fit: cover;
+    display: block;
+}
+
+/* ============================================================
+   10. ÓRDENES
+   ============================================================ */
+.orden-card {
+    border-left: 5px solid #3b82f6;
+    transition: opacity 0.4s, transform 0.4s;
+}
+
+/* ============================================================
+   11. FORMULARIOS
+   ============================================================ */
+label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--texto-gris);
+    margin-top: 16px;
+    margin-bottom: 4px;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 13px 16px;
+    border-radius: 14px;
+    border: 2px solid var(--borde);
+    background: #f8fafc;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
+    color: var(--negro-pro);
+    transition: border-color 0.2s;
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--naranja-solido);
+    background: var(--blanco);
+}
+
+input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+button[type="submit"],
+button.btn-primario {
+    width: 100%;
+    padding: 15px;
+    background: var(--naranja-vibrante);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 20px;
+    letter-spacing: 0.03em;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+button[type="submit"]:hover,
+button.btn-primario:hover {
+    opacity: 0.92;
+}
+
+button[type="submit"]:active,
+button.btn-primario:active {
+    transform: scale(0.98);
+}
+
+button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Botones pequeños dentro de órdenes/productos */
+button:not([type="submit"]):not(.btn-primario) {
+    width: auto;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    margin-top: 0;
+    transition: opacity 0.2s;
+}
+
+button:not([type="submit"]):not(.btn-primario):hover {
+    opacity: 0.85;
+}
+
+/* ============================================================
+   12. BOTÓN FLOTANTE
+   ============================================================ */
+.btn-flotante {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 62px;
+    height: 62px;
+    background: var(--naranja-vibrante);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 32px;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(221,36,118,0.45);
+    z-index: 1000;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.btn-flotante:hover {
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 12px 30px rgba(221,36,118,0.55);
+}
+
+/* ============================================================
+   13. IMÁGENES GENERALES
+   ============================================================ */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ============================================================
+   14. BUSCADOR (productos)
+   ============================================================ */
+#buscador {
+    margin-bottom: 6px;
+}
+
+#contador {
+    font-size: 0.82rem;
+    color: var(--texto-gris);
+    margin-bottom: 14px;
+}
+
+/* ============================================================
+   15. RESPONSIVE — TABLET (768px+)
+   ============================================================ */
+@media (min-width: 768px) {
+
+    body {
+        flex-direction: row;
+    }
+
+    header {
+        width: var(--sidebar-ancho);
+        min-width: var(--sidebar-ancho);
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        overflow-y: auto;
+    }
+
+    main {
+        width: calc(100% - var(--sidebar-ancho));
+        padding: 28px 24px;
+    }
+
+    #resumen {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .card {
+        padding: 26px;
+    }
+}
+
+/* ============================================================
+   16. RESPONSIVE — ESCRITORIO (1200px+)
+   ============================================================ */
+@media (min-width: 1200px) {
+
+    :root {
+        --sidebar-ancho: 280px;
+    }
+
+    #resumen {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    main {
+        padding: 32px 32px;
+    }
+}
+
+/* ============================================================
+   17. RESPONSIVE — CELULAR (hasta 767px)
+   ============================================================ */
+@media (max-width: 767px) {
+
+    header {
+        width: 100%;
+        height: auto;
+        position: relative;
+        padding: 16px 14px;
+    }
+
+    header h1 {
+        font-size: 1.4rem;
+        margin-bottom: 14px;
+    }
+
+    .perfil-usuario {
+        margin-bottom: 16px;
+    }
+
+    /* Nav horizontal en celular */
+    nav ul {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    nav ul li {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+    }
+
+    nav ul li a {
+        font-size: 0.78rem;
+        padding: 9px 10px;
+        text-align: center;
+        border-radius: 12px;
+    }
+
+    main {
+        padding: 16px 12px;
+    }
+
+    #bienvenida h1 {
+        font-size: 1.15rem;
+    }
+
+    .card {
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    .card strong {
+        font-size: 1.5rem;
+    }
+
+    /* Tabla con scroll horizontal en celular */
+    .tabla-scroll {
+        margin: 0 -4px;
+    }
+
+    table {
+        min-width: 480px; /* mínimo razonable para que se lea bien */
+    }
+
+    th {
+        padding: 10px 10px;
+        font-size: 0.72rem;
+    }
+
+    td {
+        padding: 10px 10px;
+        font-size: 0.82rem;
+    }
+
+    td img {
+        width: 50px;
+        height: 42px;
+    }
+
+    .btn-flotante {
+        width: 54px;
+        height: 54px;
+        font-size: 28px;
+        bottom: 20px;
+        right: 20px;
+    }
+
+    /* Formularios más compactos */
+    input, select, textarea {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+    }
+
+    button[type="submit"],
+    button.btn-primario {
+        padding: 14px;
+        font-size: 0.9rem;
+    }
+}
+
+/* ============================================================
+   18. CELULAR MUY PEQUEÑO (hasta 380px)
+   ============================================================ */
+@media (max-width: 380px) {
+
+    nav ul li {
+        flex: 1 1 100%;
+    }
+
+    nav ul li a {
+        font-size: 0.82rem;
+        text-align: left;
+    }
+
+    .card strong {
+        font-size: 1.3rem;
+    }
+}

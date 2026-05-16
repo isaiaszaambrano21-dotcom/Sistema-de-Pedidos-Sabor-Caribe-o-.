@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="fondo-especial">
+
+    <main style="display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px;">
+
+        <div class="card" style="max-width:450px; width:100%;">
+
+            <div style="text-align:center; margin-bottom:25px;">
+                <img src="logo.png" alt="Logo Sabor Caribeño" width="100"
+                     style="border-radius:20px; margin-bottom:15px;">
+                <h1>Sabor Caribeño</h1>
+                <p>Iniciar sesión</p>
+            </div>
+
+            <div id="mensaje-error"
+                 style="display:none; background:#fef2f2; border:1px solid #fca5a5;
+                        color:#b91c1c; padding:12px 16px; border-radius:10px;
+                        margin-bottom:16px; font-size:0.9rem;">
+            </div>
+
+            <form id="formLogin">
+                <label>Usuario</label>
+                <input type="text" id="usuario" placeholder="Ingrese su usuario" autocomplete="username">
+
+                <label>Contraseña</label>
+                <input type="password" id="pass" placeholder="Ingrese su contraseña" autocomplete="current-password">
+
+                <button type="submit" id="btnLogin">INGRESAR</button>
+            </form>
+
+            <br>
+            <p style="text-align:center;">
+                ¿No tienes cuenta?
+                <a href="registro.html" style="color:#2563eb;">Registrarse</a>
+            </p>
+
+        </div>
+
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        // Si ya hay sesión activa, redirigir directo
+        const usuarioActivo = Auth.getUsuario();
+        if (usuarioActivo && Auth.getToken()) {
+            window.location.href = Auth.paginaPorRol(usuarioActivo.rol);
+        }
+
+        const errorBox = document.getElementById('mensaje-error');
+
+        function mostrarError(msg) {
+            errorBox.textContent   = msg;
+            errorBox.style.display = 'block';
+        }
+
+        document.getElementById('formLogin').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const usuario = document.getElementById('usuario').value.trim();
+            const pass    = document.getElementById('pass').value;
+            const btn     = document.getElementById('btnLogin');
+
+            if (!usuario || !pass) {
+                mostrarError('Por favor, completa todos los campos.');
+                return;
+            }
+
+            btn.disabled    = true;
+            btn.textContent = 'Ingresando...';
+            errorBox.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ usuario, pass })
+                });
+
+                const resultado = await res.json();
+
+                if (resultado.success) {
+                    Auth.guardar(resultado.token, resultado.usuario);
+                    window.location.href = Auth.paginaPorRol(resultado.usuario.rol);
+                } else {
+                    mostrarError(resultado.mensaje || 'Usuario o contraseña incorrectos.');
+                    btn.disabled    = false;
+                    btn.textContent = 'INGRESAR';
+                }
+
+            } catch (error) {
+                mostrarError('No se pudo conectar con el servidor.');
+                btn.disabled    = false;
+                btn.textContent = 'INGRESAR';
+            }
+        });
+    </script>
+
+</body>
+</html>

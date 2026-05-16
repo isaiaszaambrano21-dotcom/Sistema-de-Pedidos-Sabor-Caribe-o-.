@@ -1,0 +1,316 @@
+const express    = require('express');
+const http       = require('http');
+const WebSocket  = require('ws');
+const jwt        = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
+const path       = require('path');
+
+const app    = express();
+const server = http.createServer(app);
+const wss    = new WebSocket.Server({ server });
+
+app.use(express.json());
+app.use(express.static(__dirname));
+
+// ─── CONFIGURACIÓN ────────────────────────────────────────────────────────────
+const SUPABASE_URL  = 'https://wvvopajkpyuyvugmmnjm.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2dm9wYWprcHl1eXZ1Z21tbmptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MzI0NDIsImV4cCI6MjA5NDUwODQ0Mn0.wo72-qeeBb_r1TH1pLXikoQVD3o42iG7MNbIUpz4cVo';
+const JWT_SECRET    = 'sabor-caribeno-secret-2025';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ─── WEBSOCKETS ───────────────────────────────────────────────────────────────
+const clientes = new Map();
+
+wss.on('connection', (ws) => {
+    const id = Date.now() + Math.random();
+    clientes.set(id, { ws, rol: null, nombre: null });
+
+    ws.on('message', (msg) => {
+        try {
+            const data = JSON.parse(msg);
+            if (data.tipo === 'identificar') {
+                try {
+                    const decoded = jwt.verify(data.token, JWT_SECRET);
+                    clientes.set(id, { ws, rol: decoded.rol, nombre: decoded.nombre });
+                } catch { /* token inválido */ }
+            }
+        } catch { /* mensaje inválido */ }
+    });
+
+    ws.on('close', () => clientes.delete(id));
+});
+
+function notificar(roles, mensaje) {
+    clientes.forEach(({ ws, rol }) => {
+        if (roles.includes(rol) && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(mensaje));
+        }
+    });
+}
+
+// ─── MIDDLEWARES ──────────────────────────────────────────────────────────────
+function verificarToken(req, res, next) {
+    const auth = req.headers.authorization;
+    if (!auth) return res.status(401).json({ success: false, mensaje: 'Sin token.' });
+    try {
+        req.usuario = jwt.verify(auth.split(' ')[1], JWT_SECRET);
+        next();
+    } catch {
+        res.status(401).json({ success: false, mensaje: 'Token inválido.' });
+    }
+}
+
+function soloRoles(...roles) {
+    return (req, res, next) => {
+        if (!roles.includes(req.usuario.rol)) {
+            return res.status(403).json({ success: false, mensaje: 'Sin permiso.' });
+        }
+        next();
+    };
+}
+
+// ─── REGISTRO ─────────────────────────────────────────────────────────────────
+app.post('/api/registro', async (req, res) => {
+    const { nombre, correo, usuario, pass, rol } = req.body;
+
+    if (!nombre || !correo || !usuario || !pass || !rol) {
+        return res.status(400).json({ success: false, mensaje: 'Todos los campos son obligatorios.' });
+    }
+
+    const rolesValidos = ['gerente', 'administrador', 'mesero', 'cocinero'];
+    if (!rolesValidos.includes(rol)) {
+        return res.status(400).json({ success: false, mensaje: 'Rol inválido.' });
+    }
+
+    if (pass.length < 6) {
+        return res.status(400).json({ success: false, mensaje: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
+
+    const { error } = await supabase
+        .from('usuarios')
+        .insert([{ nombre, correo, usuario, pass, rol }]);
+
+    if (error) {
+        if (error.code === '23505') {
+            return res.status(409).json({ success: false, mensaje: 'El usuario o correo ya existe.' });
+        }
+        return res.status(500).json({ success: false, mensaje: 'Error al registrar.' });
+    }
+
+    console.log(`[REGISTRO] ${usuario} (${rol})`);
+    res.json({ success: true, mensaje: 'Usuario registrado con éxito.' });
+});
+
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
+app.post('/api/login', async (req, res) => {
+    const { usuario, pass } = req.body;
+
+    if (!usuario || !pass) {
+        return res.status(400).json({ success: false, mensaje: 'Completa todos los campos.' });
+    }
+
+    const { data, error } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('usuario', usuario)
+        .eq('pass', pass)
+        .single();
+
+    if (error || !data) {
+        return res.status(401).json({ success: false, mensaje: 'Usuario o contraseña incorrectos.' });
+    }
+
+    const token = jwt.sign(
+        { id: data.id, nombre: data.nombre, correo: data.correo, usuario: data.usuario, rol: data.rol },
+        JWT_SECRET,
+        { expiresIn: '8h' }
+    );
+
+    console.log(`[LOGIN] ${data.usuario} (${data.rol})`);
+    res.json({
+        success: true,
+        token,
+        usuario: { nombre: data.nombre, correo: data.correo, usuario: data.usuario, rol: data.rol }
+    });
+});
+
+// ─── CAMBIAR CONTRASEÑA ───────────────────────────────────────────────────────
+app.post('/api/cambiar-password', verificarToken, async (req, res) => {
+    const { passActual, passNueva } = req.body;
+
+    if (!passActual || !passNueva) {
+        return res.status(400).json({ success: false, mensaje: 'Completa todos los campos.' });
+    }
+
+    if (passNueva.length < 6) {
+        return res.status(400).json({ success: false, mensaje: 'Mínimo 6 caracteres.' });
+    }
+
+    const { data } = await supabase
+        .from('usuarios')
+        .select('id')
+        .eq('id', req.usuario.id)
+        .eq('pass', passActual)
+        .single();
+
+    if (!data) {
+        return res.status(401).json({ success: false, mensaje: 'La contraseña actual es incorrecta.' });
+    }
+
+    await supabase.from('usuarios').update({ pass: passNueva }).eq('id', req.usuario.id);
+    res.json({ success: true, mensaje: 'Contraseña cambiada.' });
+});
+
+// ─── PRODUCTOS ────────────────────────────────────────────────────────────────
+app.get('/api/productos', verificarToken, async (req, res) => {
+    const { data, error } = await supabase.from('productos').select('*').order('nombre');
+    if (error) return res.status(500).json({ success: false });
+    res.json({ success: true, productos: data });
+});
+
+app.patch('/api/productos/:id', verificarToken, soloRoles('gerente', 'administrador'), async (req, res) => {
+    const { disponible } = req.body;
+    await supabase.from('productos').update({ disponible }).eq('id', req.params.id);
+    res.json({ success: true });
+});
+
+// ─── PEDIDOS ──────────────────────────────────────────────────────────────────
+app.get('/api/pedidos', verificarToken, async (req, res) => {
+    let query = supabase
+        .from('pedidos')
+        .select('*')
+        .neq('estado', 'completado')
+        .order('creado_en');
+
+    // Mesero solo ve sus pedidos
+    if (req.usuario.rol === 'mesero') {
+        query = query.eq('mesero_id', req.usuario.id);
+    }
+
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ success: false });
+    res.json({ success: true, pedidos: data });
+});
+
+app.post('/api/pedidos', verificarToken, soloRoles('gerente', 'administrador', 'mesero'), async (req, res) => {
+    const { mesa, plato, precio, notas } = req.body;
+
+    if (!mesa || !plato) {
+        return res.status(400).json({ success: false, mensaje: 'Mesa y plato son obligatorios.' });
+    }
+
+    const { data, error } = await supabase.from('pedidos').insert([{
+        mesa,
+        plato,
+        precio:        precio || 0,
+        notas:         notas  || '',
+        estado:        'en-proceso',
+        mesero_id:     req.usuario.id,
+        mesero_nombre: req.usuario.nombre
+    }]).select().single();
+
+    if (error) return res.status(500).json({ success: false, mensaje: 'Error al guardar pedido.' });
+
+    // Notificar al cocinero
+    notificar(['cocinero', 'administrador', 'gerente'], {
+        tipo:    'nuevo-pedido',
+        mensaje: `🍽️ Nuevo pedido — Mesa ${mesa}: ${plato}`,
+        pedido:  data
+    });
+
+    console.log(`[PEDIDO] Mesa ${mesa}: ${plato}`);
+    res.json({ success: true, pedido: data });
+});
+
+app.patch('/api/pedidos/:id/estado', verificarToken, async (req, res) => {
+    const { estado } = req.body;
+    const rol = req.usuario.rol;
+
+    if (rol === 'cocinero' && !['preparando', 'listo'].includes(estado)) {
+        return res.status(403).json({ success: false, mensaje: 'Sin permiso.' });
+    }
+
+    if (rol === 'mesero' && estado !== 'completado') {
+        return res.status(403).json({ success: false, mensaje: 'Sin permiso.' });
+    }
+
+    const updates = { estado };
+    if (estado === 'completado') updates.completado_en = new Date().toISOString();
+
+    const { data } = await supabase
+        .from('pedidos')
+        .update(updates)
+        .eq('id', req.params.id)
+        .select()
+        .single();
+
+    // Si el cocinero marca listo → notificar al mesero
+    if (estado === 'listo' && data) {
+        notificar(['mesero', 'administrador', 'gerente'], {
+            tipo:    'pedido-listo',
+            mensaje: `✅ Mesa ${data.mesa} lista — ${data.plato}`,
+            pedido:  data
+        });
+    }
+
+    res.json({ success: true });
+});
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+app.get('/api/dashboard', verificarToken, soloRoles('gerente', 'administrador'), async (req, res) => {
+    const { data: completados } = await supabase
+        .from('pedidos').select('*').eq('estado', 'completado');
+
+    const { data: activos } = await supabase
+        .from('pedidos').select('*').neq('estado', 'completado');
+
+    const totalVentas = completados?.reduce((s, p) => s + (p.precio || 0), 0) || 0;
+
+    const conteo = {}, ingresos = {};
+    completados?.forEach(p => {
+        conteo[p.plato]   = (conteo[p.plato]   || 0) + 1;
+        ingresos[p.plato] = (ingresos[p.plato]  || 0) + (p.precio || 0);
+    });
+
+    const ranking = Object.entries(conteo)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([plato, cantidad]) => ({ plato, cantidad, ingreso: ingresos[plato] }));
+
+    const hoy = new Date();
+    const ventasPorDia = Array(7).fill(0);
+    completados?.forEach(p => {
+        if (!p.completado_en) return;
+        const diff = Math.floor((hoy - new Date(p.completado_en)) / 86400000);
+        if (diff >= 0 && diff < 7) ventasPorDia[6 - diff] += (p.precio || 0);
+    });
+
+    res.json({
+        success: true,
+        totalVentas,
+        totalOrdenes:   completados?.length || 0,
+        ordenesActivas: activos?.length     || 0,
+        ranking,
+        ventasPorDia
+    });
+});
+
+// ─── USUARIOS ─────────────────────────────────────────────────────────────────
+app.get('/api/usuarios', verificarToken, soloRoles('gerente', 'administrador'), async (req, res) => {
+    const { data } = await supabase
+        .from('usuarios')
+        .select('id, nombre, correo, usuario, rol, creado_en');
+    res.json({ success: true, usuarios: data });
+});
+
+app.delete('/api/usuarios/:id', verificarToken, soloRoles('gerente'), async (req, res) => {
+    await supabase.from('usuarios').delete().eq('id', req.params.id);
+    res.json({ success: true });
+});
+
+// ─── INICIO ───────────────────────────────────────────────────────────────────
+const PUERTO = process.env.PORT || 3000;
+server.listen(PUERTO, () => {
+    console.log(`Sabor Caribeño corriendo en http://localhost:${PUERTO}`);
+});

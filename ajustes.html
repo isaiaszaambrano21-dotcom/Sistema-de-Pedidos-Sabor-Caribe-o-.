@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Sabor Caribeño</h1>
+        <div class="perfil-usuario">
+            <img src="logo.png" alt="Logo">
+            <div class="info-user">
+                <p><strong id="nombre-header">Cargando...</strong></p>
+                <small id="rol-header">—</small>
+            </div>
+        </div>
+        <nav aria-label="Menú principal">
+            <ul>
+                <li><a href="vision.html">Resumen</a></li>
+                <li><a href="productos.html">Productos</a></li>
+                <li><a href="ordenes.html">Órdenes</a></li>
+                <li><a href="ajustes.html" class="active">Ajustes</a></li>
+            </ul>
+        </nav>
+        <button onclick="Auth.cerrar()"
+            style="margin-top:20px; background:#ef4444; color:white; border:none;
+                   padding:12px; border-radius:14px; font-weight:700; cursor:pointer; width:100%;">
+            Cerrar sesión
+        </button>
+    </header>
+
+    <main>
+
+        <section id="bienvenida">
+            <h1>Ajustes del Sistema</h1>
+            <p>Administra la configuración del restaurante.</p>
+        </section>
+
+        <section id="resumen">
+
+            <!-- PERFIL -->
+            <article class="card">
+                <h3>Perfil del Administrador</h3>
+                <div id="msg-perfil" style="display:none; padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:0.9rem;"></div>
+                <form id="formPerfil">
+                    <label>Nombre</label>
+                    <input type="text" id="perfil-nombre" placeholder="Tu nombre completo">
+                    <label>Correo electrónico</label>
+                    <input type="email" id="perfil-correo" placeholder="Tu correo">
+                    <label>Usuario</label>
+                    <input type="text" id="perfil-usuario" disabled style="opacity:0.6;">
+                    <label>Rol</label>
+                    <input type="text" id="perfil-rol" disabled style="opacity:0.6;">
+                    <button type="submit">Guardar Cambios</button>
+                </form>
+            </article>
+
+            <!-- USUARIOS (solo gerente) -->
+            <article class="card" id="card-usuarios" style="display:none;">
+                <h3>Gestión de Usuarios</h3>
+                <div id="lista-usuarios" style="margin-top:10px;"></div>
+            </article>
+
+            <!-- RESTAURANTE -->
+            <article class="card">
+                <h3>Información del Restaurante</h3>
+                <div id="msg-restaurante" style="display:none; padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:0.9rem;"></div>
+                <form id="formRestaurante">
+                    <label>Nombre del Restaurante</label>
+                    <input type="text" id="rest-nombre" value="Sabor Caribeño">
+                    <label>Dirección</label>
+                    <input type="text" id="rest-direccion" value="Panamá Oeste">
+                    <label>Teléfono</label>
+                    <input type="text" id="rest-telefono" value="+507 6000-0000">
+                    <label>Correo</label>
+                    <input type="email" id="rest-correo" value="contacto@saborcaribeno.com">
+                    <button type="submit">Actualizar Información</button>
+                </form>
+            </article>
+
+            <!-- CONTRASEÑA -->
+            <article class="card">
+                <h3>Cambiar Contraseña</h3>
+                <div id="msg-pass" style="display:none; padding:10px 14px; border-radius:10px; margin-bottom:14px; font-size:0.9rem;"></div>
+                <form id="formPassword">
+                    <label>Contraseña actual</label>
+                    <input type="password" id="pass-actual" placeholder="Tu contraseña actual">
+                    <label>Nueva contraseña</label>
+                    <input type="password" id="pass-nueva" placeholder="Mínimo 6 caracteres">
+                    <label>Confirmar nueva contraseña</label>
+                    <input type="password" id="pass-confirmar" placeholder="Repite la nueva contraseña">
+                    <button type="submit">Cambiar Contraseña</button>
+                </form>
+            </article>
+
+        </section>
+
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        const usuario = Auth.requerir('gerente', 'administrador');
+        if (!usuario) throw new Error('Sin acceso');
+
+        Auth.mostrarUsuario();
+        const rol = usuario.rol;
+
+        // ── Cargar datos del perfil ──
+        document.getElementById('perfil-nombre').value  = usuario.nombre;
+        document.getElementById('perfil-correo').value  = usuario.correo;
+        document.getElementById('perfil-usuario').value = usuario.usuario;
+        document.getElementById('perfil-rol').value     = Auth.nombreRol(usuario.rol);
+
+        // ── Cargar config restaurante ──
+        const configRest = JSON.parse(localStorage.getItem('configRestaurante') || '{}');
+        if (configRest.nombre)    document.getElementById('rest-nombre').value    = configRest.nombre;
+        if (configRest.direccion) document.getElementById('rest-direccion').value = configRest.direccion;
+        if (configRest.telefono)  document.getElementById('rest-telefono').value  = configRest.telefono;
+        if (configRest.correo)    document.getElementById('rest-correo').value    = configRest.correo;
+
+        // ── Mostrar usuarios (solo gerente) ──
+        if (rol === 'gerente') {
+            document.getElementById('card-usuarios').style.display = 'block';
+            cargarUsuarios();
+        }
+
+        async function cargarUsuarios() {
+            const data = await Auth.fetch('/api/usuarios');
+            if (!data || !data.success) return;
+
+            document.getElementById('lista-usuarios').innerHTML = data.usuarios.map(u => `
+                <div style="display:flex; justify-content:space-between; align-items:center;
+                            padding:12px; border-bottom:1px solid #f1f5f9; flex-wrap:wrap; gap:8px;">
+                    <div>
+                        <p style="font-weight:600; margin-bottom:2px;">${u.nombre}</p>
+                        <p style="font-size:0.82rem; color:#6b7280;">@${u.usuario} · ${Auth.nombreRol(u.rol)}</p>
+                    </div>
+                    ${u.usuario !== usuario.usuario ? `
+                    <button onclick="eliminarUsuario('${u.id}')"
+                        style="background:#fef2f2; color:#b91c1c; border:1px solid #fca5a5;
+                               padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600;">
+                        Eliminar
+                    </button>` : '<span style="font-size:0.8rem; color:#9ca3af;">Tú</span>'}
+                </div>`).join('');
+        }
+
+        async function eliminarUsuario(id) {
+            if (!confirm('¿Eliminar este usuario?')) return;
+            await Auth.fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+            cargarUsuarios();
+        }
+
+        // ── Utilidad mensajes ──
+        function mostrarMsg(id, texto, tipo) {
+            const div = document.getElementById(id);
+            div.textContent      = texto;
+            div.style.background = tipo === 'ok' ? '#f0fdf4' : '#fef2f2';
+            div.style.border     = tipo === 'ok' ? '1px solid #86efac' : '1px solid #fca5a5';
+            div.style.color      = tipo === 'ok' ? '#166534' : '#b91c1c';
+            div.style.display    = 'block';
+            setTimeout(() => div.style.display = 'none', 3000);
+        }
+
+        // ── Guardar perfil ──
+        document.getElementById('formPerfil').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = Auth.getUsuario();
+            u.nombre = document.getElementById('perfil-nombre').value.trim();
+            u.correo = document.getElementById('perfil-correo').value.trim();
+            Auth.guardar(Auth.getToken(), u);
+            document.getElementById('nombre-header').textContent = u.nombre;
+            mostrarMsg('msg-perfil', 'Perfil actualizado.', 'ok');
+        });
+
+        // ── Guardar restaurante ──
+        document.getElementById('formRestaurante').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const config = {
+                nombre:    document.getElementById('rest-nombre').value.trim(),
+                direccion: document.getElementById('rest-direccion').value.trim(),
+                telefono:  document.getElementById('rest-telefono').value.trim(),
+                correo:    document.getElementById('rest-correo').value.trim()
+            };
+            localStorage.setItem('configRestaurante', JSON.stringify(config));
+            mostrarMsg('msg-restaurante', 'Información guardada.', 'ok');
+        });
+
+        // ── Cambiar contraseña ──
+        document.getElementById('formPassword').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const actual    = document.getElementById('pass-actual').value;
+            const nueva     = document.getElementById('pass-nueva').value;
+            const confirmar = document.getElementById('pass-confirmar').value;
+
+            if (!actual || !nueva || !confirmar) {
+                mostrarMsg('msg-pass', 'Completa todos los campos.', 'error'); return;
+            }
+            if (nueva.length < 6) {
+                mostrarMsg('msg-pass', 'Mínimo 6 caracteres.', 'error'); return;
+            }
+            if (nueva !== confirmar) {
+                mostrarMsg('msg-pass', 'Las contraseñas no coinciden.', 'error'); return;
+            }
+
+            const data = await Auth.fetch('/api/cambiar-password', {
+                method: 'POST',
+                body:   JSON.stringify({ passActual: actual, passNueva: nueva })
+            });
+
+            if (data && data.success) {
+                mostrarMsg('msg-pass', 'Contraseña cambiada correctamente.', 'ok');
+                document.getElementById('formPassword').reset();
+            } else {
+                mostrarMsg('msg-pass', data?.mensaje || 'Error al cambiar contraseña.', 'error');
+            }
+        });
+    </script>
+
+</body>
+</html>

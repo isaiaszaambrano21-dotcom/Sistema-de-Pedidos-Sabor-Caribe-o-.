@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Pedido - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Sabor Caribeño</h1>
+        <div class="perfil-usuario">
+            <img src="logo.png" alt="Logo">
+            <div class="info-user">
+                <p><strong id="nombre-header">Cargando...</strong></p>
+                <small id="rol-header">—</small>
+            </div>
+        </div>
+        <nav>
+            <ul id="nav-menu"></ul>
+        </nav>
+        <button onclick="Auth.cerrar()"
+            style="margin-top:20px; background:#ef4444; color:white; border:none;
+                   padding:12px; border-radius:14px; font-weight:700; cursor:pointer; width:100%;">
+            Cerrar sesión
+        </button>
+    </header>
+
+    <main>
+
+        <div class="card" style="max-width:600px; margin:0 auto;">
+
+            <h2 style="margin-bottom:20px;">Registrar Pedido</h2>
+
+            <div id="mensaje"
+                 style="display:none; padding:12px 16px; border-radius:10px;
+                        margin-bottom:16px; font-size:0.9rem;">
+            </div>
+
+            <form id="formPedido">
+
+                <label>Mesa #</label>
+                <input type="number" id="mesa" placeholder="Ej. 5" min="1" required>
+
+                <label>Plato Principal</label>
+                <select id="plato" required>
+                    <option value="">Seleccione un platillo</option>
+                </select>
+
+                <div id="precio-estimado"
+                     style="display:none; background:#f0fdf4; border:1px solid #86efac;
+                            color:#166534; padding:10px 16px; border-radius:10px;
+                            margin-top:8px; font-size:0.9rem; text-align:center;">
+                </div>
+
+                <label>Notas Especiales</label>
+                <textarea id="notas"
+                    placeholder="Personalización o notas para la cocina..."
+                    style="height:90px; resize:none;"></textarea>
+
+                <button type="submit" id="btnEnviar">ENVIAR A COCINA</button>
+
+            </form>
+
+            <br>
+            <a href="ordenes.html" style="text-align:center; display:block; color:#2563eb;">
+                Ver órdenes activas
+            </a>
+
+        </div>
+
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        // ── Verificar sesión ──
+        const usuario = Auth.requerir('gerente', 'administrador', 'mesero');
+        if (!usuario) throw new Error('Sin acceso');
+
+        Auth.mostrarUsuario();
+
+        const rol = usuario.rol;
+
+        // ── Menú según rol ──
+        const menus = {
+            gerente:       ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','nuevo-pedido.html|Nuevo Pedido','ajustes.html|Ajustes'],
+            administrador: ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','nuevo-pedido.html|Nuevo Pedido','ajustes.html|Ajustes'],
+            mesero:        ['nuevo-pedido.html|Nuevo Pedido','ordenes.html|Mis Órdenes','productos.html|Menú']
+        };
+
+        document.getElementById('nav-menu').innerHTML = (menus[rol] || []).map(item => {
+            const [href, label] = item.split('|');
+            const active = location.pathname.endsWith(href) ? 'class="active"' : '';
+            return `<li><a href="${href}" ${active}>${label}</a></li>`;
+        }).join('');
+
+        const msgBox = document.getElementById('mensaje');
+
+        function mostrarMensaje(texto, tipo) {
+            msgBox.textContent      = texto;
+            msgBox.style.background = tipo === 'ok' ? '#f0fdf4' : '#fef2f2';
+            msgBox.style.border     = tipo === 'ok' ? '1px solid #86efac' : '1px solid #fca5a5';
+            msgBox.style.color      = tipo === 'ok' ? '#166534' : '#b91c1c';
+            msgBox.style.display    = 'block';
+        }
+
+        // ── Cargar productos desde Supabase ──
+        async function cargarProductos() {
+            const data = await Auth.fetch('/api/productos');
+            if (!data || !data.success) return;
+
+            const select = document.getElementById('plato');
+            const disponibles = data.productos.filter(p => p.disponible);
+
+            // Agrupar por categoría
+            const categorias = {};
+            disponibles.forEach(p => {
+                const cat = p.categoria || 'otros';
+                if (!categorias[cat]) categorias[cat] = [];
+                categorias[cat].push(p);
+            });
+
+            Object.entries(categorias).forEach(([cat, prods]) => {
+                const group = document.createElement('optgroup');
+                group.label = cat.charAt(0).toUpperCase() + cat.slice(1);
+                prods.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value       = `${p.nombre}|${p.precio}`;
+                    opt.textContent = `${p.nombre} — B/.${p.precio.toFixed(2)}`;
+                    group.appendChild(opt);
+                });
+                select.appendChild(group);
+            });
+        }
+
+        // ── Mostrar precio al seleccionar ──
+        document.getElementById('plato').addEventListener('change', function() {
+            const precioDiv = document.getElementById('precio-estimado');
+            if (!this.value) { precioDiv.style.display = 'none'; return; }
+            const [, precio] = this.value.split('|');
+            precioDiv.textContent  = `Precio estimado: B/.${parseFloat(precio).toFixed(2)}`;
+            precioDiv.style.display = 'block';
+        });
+
+        // ── Enviar pedido ──
+        document.getElementById('formPedido').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const mesa  = document.getElementById('mesa').value;
+            const val   = document.getElementById('plato').value;
+            const notas = document.getElementById('notas').value.trim();
+            const btn   = document.getElementById('btnEnviar');
+
+            if (!mesa || !val) {
+                mostrarMensaje('Por favor completa mesa y plato.', 'error');
+                return;
+            }
+
+            const [plato, precio] = val.split('|');
+
+            btn.disabled    = true;
+            btn.textContent = 'Enviando...';
+
+            const data = await Auth.fetch('/api/pedidos', {
+                method: 'POST',
+                body:   JSON.stringify({ mesa: parseInt(mesa), plato, precio: parseFloat(precio), notas })
+            });
+
+            if (data && data.success) {
+                mostrarMensaje('✅ Pedido enviado a cocina.', 'ok');
+                document.getElementById('formPedido').reset();
+                document.getElementById('precio-estimado').style.display = 'none';
+                setTimeout(() => window.location.href = 'ordenes.html', 1200);
+            } else {
+                mostrarMensaje(data?.mensaje || 'Error al enviar pedido.', 'error');
+            }
+
+            btn.disabled    = false;
+            btn.textContent = 'ENVIAR A COCINA';
+        });
+
+        document.addEventListener('DOMContentLoaded', cargarProductos);
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="fondo-especial">
+
+    <main style="display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px;">
+
+        <div class="card" style="max-width:500px; width:100%;">
+
+            <div style="text-align:center; margin-bottom:25px;">
+                <img src="logo.png" alt="Logo Sabor Caribeño" width="100"
+                     style="border-radius:20px; margin-bottom:15px;">
+                <h1>Sabor Caribeño</h1>
+                <p>Crear nueva cuenta</p>
+            </div>
+
+            <div id="mensaje"
+                 style="display:none; padding:12px 16px; border-radius:10px;
+                        margin-bottom:16px; font-size:0.9rem;">
+            </div>
+
+            <form id="formRegistro">
+
+                <label>Nombre completo</label>
+                <input type="text" id="nombre" placeholder="Ingrese su nombre completo">
+
+                <label>Correo electrónico</label>
+                <input type="email" id="correo" placeholder="Ingrese su correo">
+
+                <label>Usuario</label>
+                <input type="text" id="usuario" placeholder="Ingrese su usuario">
+
+                <label>Rol</label>
+                <select id="rol">
+                    <option value="">Seleccione su rol</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="mesero">Mesero</option>
+                    <option value="cocinero">Cocinero</option>
+                </select>
+
+                <label>Contraseña</label>
+                <input type="password" id="pass" placeholder="Mínimo 6 caracteres">
+
+                <label>Confirmar contraseña</label>
+                <input type="password" id="pass2" placeholder="Repita su contraseña">
+
+                <button type="submit" id="btnRegistro">REGISTRARSE</button>
+
+            </form>
+
+            <br>
+            <p style="text-align:center;">
+                ¿Ya tienes cuenta?
+                <a href="login.html" style="color:#2563eb;">Iniciar sesión</a>
+            </p>
+
+        </div>
+
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        const msgBox = document.getElementById('mensaje');
+
+        function mostrarMensaje(texto, tipo) {
+            msgBox.textContent      = texto;
+            msgBox.style.background = tipo === 'ok' ? '#f0fdf4' : '#fef2f2';
+            msgBox.style.border     = tipo === 'ok' ? '1px solid #86efac' : '1px solid #fca5a5';
+            msgBox.style.color      = tipo === 'ok' ? '#166534' : '#b91c1c';
+            msgBox.style.display    = 'block';
+        }
+
+        document.getElementById('formRegistro').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const nombre  = document.getElementById('nombre').value.trim();
+            const correo  = document.getElementById('correo').value.trim();
+            const usuario = document.getElementById('usuario').value.trim();
+            const rol     = document.getElementById('rol').value;
+            const pass    = document.getElementById('pass').value;
+            const pass2   = document.getElementById('pass2').value;
+            const btn     = document.getElementById('btnRegistro');
+
+            if (!nombre || !correo || !usuario || !rol || !pass || !pass2) {
+                mostrarMensaje('Por favor, completa todos los campos.', 'error');
+                return;
+            }
+
+            if (pass.length < 6) {
+                mostrarMensaje('La contraseña debe tener al menos 6 caracteres.', 'error');
+                return;
+            }
+
+            if (pass !== pass2) {
+                mostrarMensaje('Las contraseñas no coinciden.', 'error');
+                return;
+            }
+
+            btn.disabled    = true;
+            btn.textContent = 'Registrando...';
+
+            try {
+                const res = await fetch('/api/registro', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ nombre, correo, usuario, pass, rol })
+                });
+
+                const resultado = await res.json();
+
+                if (resultado.success) {
+                    mostrarMensaje('¡Cuenta creada! Redirigiendo...', 'ok');
+                    setTimeout(() => window.location.href = 'login.html', 1500);
+                } else {
+                    mostrarMensaje(resultado.mensaje || 'Error al registrar.', 'error');
+                    btn.disabled    = false;
+                    btn.textContent = 'REGISTRARSE';
+                }
+
+            } catch {
+                mostrarMensaje('No se pudo conectar con el servidor.', 'error');
+                btn.disabled    = false;
+                btn.textContent = 'REGISTRARSE';
+            }
+        });
+    </script>
+
+</body>
+</html>

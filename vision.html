@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>Sabor Caribeño</h1>
+        <div class="perfil-usuario">
+            <img src="logo.png" alt="Logo">
+            <div class="info-user">
+                <p><strong id="nombre-header">Cargando...</strong></p>
+                <small id="rol-header">—</small>
+            </div>
+        </div>
+        <nav aria-label="Menú principal">
+            <ul>
+                <li><a href="vision.html" class="active">Resumen</a></li>
+                <li><a href="productos.html">Productos</a></li>
+                <li><a href="ordenes.html">Órdenes</a></li>
+                <li><a href="ajustes.html">Ajustes</a></li>
+            </ul>
+        </nav>
+        <button onclick="Auth.cerrar()"
+            style="margin-top:auto; background:#ef4444; color:white; border:none;
+                   padding:12px; border-radius:14px; font-weight:700; cursor:pointer;
+                   width:100%; margin-top:20px;">
+            Cerrar sesión
+        </button>
+    </header>
+
+    <main>
+
+        <section id="bienvenida">
+            <h1 id="titulo-bienvenida">Bienvenido de vuelta</h1>
+            <p>Aquí se visualizan los reportes del día.</p>
+        </section>
+
+        <section id="resumen">
+
+            <article class="card card-destacada">
+                <h3>Ventas Totales</h3>
+                <p id="total-ordenes">0 Órdenes</p>
+                <strong id="total-ventas">B/.0.00</strong>
+                <span class="badge" id="badge-activas">0 activas ahora</span>
+            </article>
+
+            <article class="card">
+                <h3>Órdenes Activas</h3>
+                <p>En cocina ahora mismo</p>
+                <strong id="ordenes-activas"
+                    style="background:none; -webkit-text-fill-color:#f59e0b;">0</strong>
+                <span class="badge-negativo" id="badge-estado">Sin órdenes</span>
+            </article>
+
+            <article class="card">
+                <h3>Productos más vendidos</h3>
+                <ul class="lista-ranking" id="ranking-productos">
+                    <li><span>1.</span> <em>Sin datos aún</em> <strong>B/.0.00</strong></li>
+                    <li><span>2.</span> <em>Sin datos aún</em> <strong>B/.0.00</strong></li>
+                    <li><span>3.</span> <em>Sin datos aún</em> <strong>B/.0.00</strong></li>
+                </ul>
+            </article>
+
+            <article class="card">
+                <h3>Ventas — Últimos 7 días</h3>
+                <canvas id="graficaVentas" height="140"></canvas>
+            </article>
+
+        </section>
+
+    </main>
+
+    <a href="nuevo-pedido.html" class="btn-flotante" title="Nuevo Pedido">+</a>
+
+    <script src="auth.js"></script>
+    <script>
+        // ── Verificar sesión (solo gerente y administrador) ──
+        const usuario = Auth.requerir('gerente', 'administrador');
+        if (!usuario) throw new Error('Sin acceso');
+
+        Auth.mostrarUsuario();
+        document.getElementById('titulo-bienvenida').textContent = `Bienvenido de vuelta, ${usuario.nombre}`;
+
+        // ── Conectar WebSocket ──
+        Notif.conectar();
+        Notif.on('nuevo-pedido', () => cargarDashboard());
+        Notif.on('pedido-listo', () => cargarDashboard());
+
+        // ── Gráfica ──
+        let graficaInstance = null;
+
+        function renderGrafica(ventasPorDia) {
+            const ctx = document.getElementById('graficaVentas').getContext('2d');
+
+            const labels = [];
+            const hoy = new Date();
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(hoy);
+                d.setDate(hoy.getDate() - i);
+                labels.push(d.toLocaleDateString('es-PA', { weekday: 'short', day: 'numeric' }));
+            }
+
+            if (graficaInstance) graficaInstance.destroy();
+
+            graficaInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Ventas B/.',
+                        data:  ventasPorDia,
+                        backgroundColor: 'rgba(255, 81, 47, 0.7)',
+                        borderColor:     '#ff512f',
+                        borderWidth:     2,
+                        borderRadius:    8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `B/. ${ctx.parsed.y.toFixed(2)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: v => `B/.${v}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ── Cargar datos del dashboard ──
+        async function cargarDashboard() {
+            const data = await Auth.fetch('/api/dashboard');
+            if (!data || !data.success) return;
+
+            document.getElementById('total-ordenes').textContent  = `${data.totalOrdenes} Órdenes completadas`;
+            document.getElementById('total-ventas').textContent   = `B/.${data.totalVentas.toFixed(2)}`;
+            document.getElementById('ordenes-activas').textContent = data.ordenesActivas;
+            document.getElementById('badge-activas').textContent  = `${data.ordenesActivas} activas ahora`;
+            document.getElementById('badge-estado').textContent   = data.ordenesActivas > 0 ? 'En proceso' : 'Sin órdenes';
+
+            // Ranking
+            const lista = document.getElementById('ranking-productos');
+            if (data.ranking.length > 0) {
+                lista.innerHTML = data.ranking.map((p, i) =>
+                    `<li><span>${i + 1}.</span> ${p.plato} <strong>B/.${p.ingreso.toFixed(2)}</strong></li>`
+                ).join('');
+            }
+
+            // Gráfica
+            renderGrafica(data.ventasPorDia);
+        }
+
+        document.addEventListener('DOMContentLoaded', cargarDashboard);
+    </script>
+
+</body>
+</html>
