@@ -59,7 +59,6 @@
                 <span class="badge-negativo" id="badge-estado">Sin órdenes</span>
             </article>
 
-            <!-- Método de pago más usado -->
             <article class="card">
                 <h3>Método de Pago más usado</h3>
                 <div id="metodo-pago-card" style="text-align:center; padding:10px 0;">
@@ -166,7 +165,6 @@
             document.getElementById('badge-activas').textContent   = `${data.ordenesActivas} activas ahora`;
             document.getElementById('badge-estado').textContent    = data.ordenesActivas > 0 ? 'En proceso' : 'Sin órdenes';
 
-            // ── Método de pago más usado ──
             const masUsado   = data.metodoMasUsado;
             const infoMetodo = METODO_INFO[masUsado];
             const cardMetodo = document.getElementById('metodo-pago-card');
@@ -194,15 +192,14 @@
                     <p style="font-size:1rem; font-weight:700; color:#9ca3af;">Sin datos aún</p>`;
             }
 
-            // ── Ranking productos ──
             const lista = document.getElementById('ranking-productos');
-            if (data.ranking.length > 0) {
-                lista.innerHTML = data.ranking.map((p, i) =>
-                    `<li><span>${i + 1}.</span> ${p.plato} <strong>B/.${p.ingreso.toFixed(2)}</strong></li>`
-                ).join('');
-            }
-
-            // ── Gráfica ──
+if (data.rankingProductos && data.rankingProductos.length > 0) {
+    lista.innerHTML = data.rankingProductos.map((p, i) =>
+        `<li><span>${i + 1}.</span> ${p.plato} <small>(${p.cantidad} und.)</small> - <strong>B/.${p.ingreso.toFixed(2)}</strong></li>`
+    ).join('');
+} else {
+    lista.innerHTML = '<li>Sin datos de platos aún</li>';
+}
             renderGrafica(data.ventasPorDia);
         }
 
