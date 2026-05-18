@@ -30,7 +30,8 @@
 
     <main>
 
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    margin-bottom:20px; flex-wrap:wrap; gap:10px;">
             <h2 id="titulo-pagina">Órdenes</h2>
             <span id="contador-badge"
                   style="background:#3b82f6; color:white; padding:6px 16px;
@@ -45,8 +46,9 @@
             <a href="nuevo-pedido.html" style="color:#2563eb;">Registrar nuevo pedido</a>
         </div>
 
-        <div id="contenedor-ordenes" style="display:grid; gap:18px;
-             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"></div>
+        <div id="contenedor-ordenes"
+             style="display:grid; gap:18px;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"></div>
 
     </main>
 
@@ -54,20 +56,17 @@
 
     <script src="auth.js"></script>
     <script>
-        // ── Verificar sesión ──
         const usuario = Auth.requerir('gerente', 'administrador', 'mesero', 'cocinero');
         if (!usuario) throw new Error('Sin acceso');
 
         Auth.mostrarUsuario();
-
         const rol = usuario.rol;
 
-        // ── Menú según rol ──
         const menus = {
-            gerente:       ['vision.html|Resumen', 'productos.html|Productos', 'ordenes.html|Órdenes', 'ajustes.html|Ajustes'],
-            administrador: ['vision.html|Resumen', 'productos.html|Productos', 'ordenes.html|Órdenes', 'ajustes.html|Ajustes'],
-            mesero:        ['nuevo-pedido.html|Nuevo Pedido', 'ordenes.html|Mis Órdenes', 'productos.html|Menú'],
-            cocinero:      ['ordenes.html|Cocina', 'productos.html|Menú']
+            gerente:       ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','ajustes.html|Ajustes'],
+            administrador: ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','ajustes.html|Ajustes'],
+            mesero:        ['nuevo-pedido.html|Nuevo Pedido','ordenes.html|Mis Órdenes','productos.html|Menú'],
+            cocinero:      ['cocina.html|Cocina','productos.html|Menú']
         };
 
         document.getElementById('nav-menu').innerHTML = (menus[rol] || []).map(item => {
@@ -76,12 +75,10 @@
             return `<li><a href="${href}" ${active}>${label}</a></li>`;
         }).join('');
 
-        // Título según rol
         document.getElementById('titulo-pagina').textContent =
             rol === 'cocinero' ? 'Cocina — Órdenes Activas' :
             rol === 'mesero'   ? 'Mis Pedidos' : 'Todas las Órdenes';
 
-        // ── Colores por estado ──
         const COLORES = {
             'en-proceso': '#f59e0b',
             'preparando': '#3b82f6',
@@ -96,7 +93,12 @@
             'completado': '✓ Completado'
         };
 
-        // ── Renderizar órdenes ──
+        const PAGO_ICONOS = {
+            'efectivo': '💵 Efectivo',
+            'tarjeta':  '💳 Tarjeta',
+            'yappy':    '📱 Yappy'
+        };
+
         function renderOrdenes(pedidos) {
             const contenedor = document.getElementById('contenedor-ordenes');
             const sinOrdenes = document.getElementById('sin-ordenes');
@@ -105,8 +107,8 @@
             badge.textContent = `${pedidos.length} órdenes`;
 
             if (pedidos.length === 0) {
-                sinOrdenes.style.display   = 'block';
-                contenedor.style.display   = 'none';
+                sinOrdenes.style.display = 'block';
+                contenedor.style.display = 'none';
                 return;
             }
 
@@ -117,8 +119,8 @@
                 const color    = COLORES[p.estado]   || '#9ca3af';
                 const etiqueta = ETIQUETAS[p.estado] || p.estado;
                 const hora     = new Date(p.creado_en).toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' });
+                const pago     = PAGO_ICONOS[p.metodo_pago] || '—';
 
-                // Botones según rol
                 let botones = '';
 
                 if (rol === 'cocinero') {
@@ -146,24 +148,20 @@
                 }
 
                 if (rol === 'administrador' || rol === 'gerente') {
-                    botones = `
-                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                            ${p.estado === 'en-proceso' ? `<button onclick="cambiarEstado('${p.id}','preparando')"
-                                style="flex:1; background:#3b82f6; color:white; padding:9px; border-radius:10px;
-                                       border:none; cursor:pointer; font-size:0.8rem; font-weight:600;">
-                                🔵 Preparando
-                            </button>` : ''}
-                            ${p.estado === 'preparando' ? `<button onclick="cambiarEstado('${p.id}','listo')"
-                                style="flex:1; background:#22c55e; color:white; padding:9px; border-radius:10px;
-                                       border:none; cursor:pointer; font-size:0.8rem; font-weight:600;">
-                                ✅ Listo
-                            </button>` : ''}
-                            ${p.estado === 'listo' ? `<button onclick="cambiarEstado('${p.id}','completado')"
-                                style="flex:1; background:#8b5cf6; color:white; padding:9px; border-radius:10px;
-                                       border:none; cursor:pointer; font-size:0.8rem; font-weight:600;">
-                                ✓ Entregado
-                            </button>` : ''}
-                        </div>`;
+                    botones = `<div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        ${p.estado === 'en-proceso' ? `<button onclick="cambiarEstado('${p.id}','preparando')"
+                            style="flex:1; background:#3b82f6; color:white; padding:9px; border-radius:10px;
+                                   border:none; cursor:pointer; font-size:0.8rem; font-weight:600;">
+                            🔵 Preparando</button>` : ''}
+                        ${p.estado === 'preparando' ? `<button onclick="cambiarEstado('${p.id}','listo')"
+                            style="flex:1; background:#22c55e; color:white; padding:9px; border-radius:10px;
+                                   border:none; cursor:pointer; font-size:0.8rem; font-weight:600;">
+                            ✅ Listo</button>` : ''}
+                        ${p.estado === 'listo' ? `<button onclick="cambiarEstado('${p.id}','completado')"
+                            style="flex:1; background:#8b5cf6; color:white; padding:9px; border-radius:10px;
+                                   border:none; cursor:pointer; font-size:0.8rem; font-weight:600;">
+                            ✓ Entregado</button>` : ''}
+                    </div>`;
                 }
 
                 return `
@@ -176,21 +174,24 @@
                     <p style="font-size:0.85rem; color:#6b7280; margin-bottom:8px;">
                         ${p.notas || 'Sin notas especiales'}
                     </p>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <span style="font-weight:700; color:#ff512f;">B/.${(p.precio||0).toFixed(2)}</span>
                         <span style="font-size:0.78rem; background:${color}22; color:${color};
                                      padding:4px 10px; border-radius:20px; font-weight:600;">
                             ${etiqueta}
                         </span>
                     </div>
+                    <div style="background:#f8fafc; border-radius:10px; padding:8px 12px;
+                                font-size:0.82rem; color:#475569; margin-bottom:12px;">
+                        💳 Pago: <strong>${pago}</strong>
+                    </div>
                     ${p.mesero_nombre ? `<p style="font-size:0.78rem; color:#9ca3af; margin-bottom:10px;">
-                        Mesero: ${p.mesero_nombre}</p>` : ''}
+                        👤 ${p.mesero_nombre}</p>` : ''}
                     ${botones}
                 </article>`;
             }).join('');
         }
 
-        // ── Cambiar estado ──
         async function cambiarEstado(id, estado) {
             const data = await Auth.fetch(`/api/pedidos/${id}/estado`, {
                 method: 'PATCH',
@@ -199,13 +200,11 @@
             if (data && data.success) cargarOrdenes();
         }
 
-        // ── Cargar órdenes ──
         async function cargarOrdenes() {
             const data = await Auth.fetch('/api/pedidos');
             if (data && data.success) renderOrdenes(data.pedidos);
         }
 
-        // ── WebSocket ──
         Notif.conectar();
         Notif.on('nuevo-pedido', () => cargarOrdenes());
         Notif.on('pedido-listo', () => cargarOrdenes());

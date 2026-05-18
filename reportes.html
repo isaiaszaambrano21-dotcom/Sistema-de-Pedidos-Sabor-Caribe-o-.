@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <h1>Sabor Caribeño</h1>
+        <div class="perfil-usuario">
+            <img src="logo.png" alt="Logo">
+            <div class="info-user">
+                <p><strong id="nombre-header">Cargando...</strong></p>
+                <small id="rol-header">—</small>
+            </div>
+        </div>
+        <nav aria-label="Menú principal">
+            <ul>
+                <li><a href="vision.html">Resumen</a></li>
+                <li><a href="productos.html">Productos</a></li>
+                <li><a href="ordenes.html">Órdenes</a></li>
+                <li><a href="reportes.html" class="active">Reportes</a></li>
+                <li><a href="ajustes.html">Ajustes</a></li>
+            </ul>
+        </nav>
+        <button onclick="Auth.cerrar()"
+            style="margin-top:20px; background:#ef4444; color:white; border:none;
+                   padding:12px; border-radius:14px; font-weight:700; cursor:pointer; width:100%;">
+            Cerrar sesión
+        </button>
+    </header>
+
+    <main>
+
+        <section id="bienvenida" style="margin-bottom:24px;">
+            <h1>Reportes de Ventas</h1>
+            <p>Consulta el rendimiento del restaurante por fecha.</p>
+        </section>
+
+        <!-- Filtro de fecha -->
+        <div class="card" style="margin-bottom:20px;">
+            <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+                <div style="flex:1; min-width:200px;">
+                    <label style="display:block; margin-bottom:6px;">Fecha del reporte</label>
+                    <input type="date" id="fecha-reporte"
+                           style="width:100%; padding:12px; border-radius:12px;
+                                  border:2px solid #e2e8f0; font-size:0.95rem;">
+                </div>
+                <button onclick="cargarReporte()"
+                    style="background:var(--naranja-vibrante); color:white; border:none;
+                           padding:14px 28px; border-radius:14px; font-weight:700;
+                           cursor:pointer; white-space:nowrap; width:auto; margin-top:0;">
+                    Ver Reporte
+                </button>
+                <button onclick="window.print()"
+                    style="background:#1e3a8a; color:white; border:none;
+                           padding:14px 28px; border-radius:14px; font-weight:700;
+                           cursor:pointer; white-space:nowrap; width:auto; margin-top:0;">
+                    🖨️ Imprimir
+                </button>
+            </div>
+        </div>
+
+        <!-- Sin datos -->
+        <div id="sin-datos"
+             style="display:none; text-align:center; padding:50px 20px; color:#6b7280;">
+            <p style="font-size:1.1rem;">No hay pedidos completados en esta fecha.</p>
+        </div>
+
+        <!-- Contenido del reporte -->
+        <div id="contenido-reporte" style="display:none;">
+
+            <!-- Resumen general -->
+            <section id="resumen" style="margin-bottom:20px;">
+
+                <article class="card card-destacada">
+                    <h3>Total del Día</h3>
+                    <p id="rpt-fecha">—</p>
+                    <strong id="rpt-total">B/.0.00</strong>
+                    <span class="badge" id="rpt-pedidos">0 pedidos</span>
+                </article>
+
+                <!-- Método más usado -->
+                <article class="card">
+                    <h3>⭐ Método Más Usado</h3>
+                    <div style="text-align:center; padding:10px 0;">
+                        <p style="font-size:2.5rem; margin-bottom:6px;" id="metodo-top-icono">—</p>
+                        <strong style="font-size:1.3rem; display:block;
+                                       background:none; -webkit-text-fill-color:initial;"
+                                id="metodo-top-nombre">—</strong>
+                        <p style="color:#6b7280; margin-top:6px; font-size:0.88rem;"
+                           id="metodo-top-detalle">—</p>
+                    </div>
+                </article>
+
+                <!-- Efectivo -->
+                <article class="card">
+                    <h3>💵 Efectivo</h3>
+                    <strong id="rpt-efectivo-monto"
+                        style="background:none; -webkit-text-fill-color:#22c55e;">B/.0.00</strong>
+                    <p id="rpt-efectivo-cant" style="color:#6b7280; font-size:0.88rem;">0 pedidos</p>
+                    <div style="height:8px; background:#dcfce7; border-radius:4px; margin-top:10px; overflow:hidden;">
+                        <div id="fill-efectivo"
+                             style="height:100%; background:#22c55e; border-radius:4px;
+                                    width:0%; transition:width 0.8s ease;"></div>
+                    </div>
+                </article>
+
+                <!-- Tarjeta -->
+                <article class="card">
+                    <h3>💳 Tarjeta</h3>
+                    <strong id="rpt-tarjeta-monto"
+                        style="background:none; -webkit-text-fill-color:#3b82f6;">B/.0.00</strong>
+                    <p id="rpt-tarjeta-cant" style="color:#6b7280; font-size:0.88rem;">0 pedidos</p>
+                    <div style="height:8px; background:#dbeafe; border-radius:4px; margin-top:10px; overflow:hidden;">
+                        <div id="fill-tarjeta"
+                             style="height:100%; background:#3b82f6; border-radius:4px;
+                                    width:0%; transition:width 0.8s ease;"></div>
+                    </div>
+                </article>
+
+                <!-- Yappy -->
+                <article class="card">
+                    <h3>📱 Yappy</h3>
+                    <strong id="rpt-yappy-monto"
+                        style="background:none; -webkit-text-fill-color:#8b5cf6;">B/.0.00</strong>
+                    <p id="rpt-yappy-cant" style="color:#6b7280; font-size:0.88rem;">0 pedidos</p>
+                    <div style="height:8px; background:#ede9fe; border-radius:4px; margin-top:10px; overflow:hidden;">
+                        <div id="fill-yappy"
+                             style="height:100%; background:#8b5cf6; border-radius:4px;
+                                    width:0%; transition:width 0.8s ease;"></div>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- Gráfica métodos de pago -->
+            <div class="card" style="margin-bottom:20px;">
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:16px;">
+                    Distribución por Método de Pago
+                </h3>
+                <div style="max-width:280px; margin:0 auto;">
+                    <canvas id="graficaPago" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Top productos -->
+            <div class="card" style="margin-bottom:20px;">
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:16px;">
+                    Productos Más Vendidos
+                </h3>
+                <div id="ranking-productos"></div>
+            </div>
+
+            <!-- Tabla detalle -->
+            <div class="card">
+                <h3 style="font-size:1rem; font-weight:700; margin-bottom:16px;">
+                    Detalle de Pedidos
+                </h3>
+                <div class="tabla-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Mesa</th>
+                                <th>Plato</th>
+                                <th>Notas</th>
+                                <th>Pago</th>
+                                <th>Precio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-pedidos"></tbody>
+                        <tfoot>
+                            <tr style="background:#f8fafc;">
+                                <td colspan="5" style="font-weight:700; padding:12px 14px;">Total</td>
+                                <td style="font-weight:700; color:#ff512f; padding:12px 14px;"
+                                    id="tabla-total">B/.0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        const usuario = Auth.requerir('gerente', 'administrador');
+        if (!usuario) throw new Error('Sin acceso');
+
+        Auth.mostrarUsuario();
+
+        // Fecha de hoy por defecto
+        document.getElementById('fecha-reporte').value = new Date().toISOString().split('T')[0];
+
+        let graficaInstance = null;
+
+        const PAGO_INFO = {
+            efectivo: { icono: '💵', nombre: 'Efectivo', color: '#22c55e' },
+            tarjeta:  { icono: '💳', nombre: 'Tarjeta',  color: '#3b82f6' },
+            yappy:    { icono: '📱', nombre: 'Yappy',    color: '#8b5cf6' }
+        };
+
+        async function cargarReporte() {
+            const fecha = document.getElementById('fecha-reporte').value;
+            if (!fecha) return;
+
+            const data = await Auth.fetch(`/api/reportes?fecha=${fecha}`);
+            if (!data || !data.success) return;
+
+            document.getElementById('sin-datos').style.display         = 'none';
+            document.getElementById('contenido-reporte').style.display = 'none';
+
+            if (data.totalPedidos === 0) {
+                document.getElementById('sin-datos').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('contenido-reporte').style.display = 'block';
+
+            // Encabezado
+            const fechaFmt = new Date(fecha + 'T12:00:00').toLocaleDateString('es-PA', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            document.getElementById('rpt-fecha').textContent   = fechaFmt;
+            document.getElementById('rpt-total').textContent   = `B/.${data.totalVentas.toFixed(2)}`;
+            document.getElementById('rpt-pedidos').textContent = `${data.totalPedidos} pedidos completados`;
+
+            // Método más usado
+            const top = data.metodoMasUsado;
+            if (top && PAGO_INFO[top]) {
+                const info = PAGO_INFO[top];
+                document.getElementById('metodo-top-icono').textContent  = info.icono;
+                document.getElementById('metodo-top-nombre').textContent = info.nombre;
+                document.getElementById('metodo-top-detalle').textContent =
+                    `${data.metodoPagoConteo[top]} pedidos · B/.${data.metodoPagoIngresos[top].toFixed(2)}`;
+            }
+
+            // Barras de métodos
+            const totalPed = data.totalPedidos || 1;
+            ['efectivo', 'tarjeta', 'yappy'].forEach(m => {
+                const cant  = data.metodoPagoConteo[m]   || 0;
+                const monto = data.metodoPagoIngresos[m] || 0;
+                const pct   = Math.round((cant / totalPed) * 100);
+                document.getElementById(`rpt-${m}-monto`).textContent = `B/.${monto.toFixed(2)}`;
+                document.getElementById(`rpt-${m}-cant`).textContent  = `${cant} pedido${cant !== 1 ? 's' : ''} (${pct}%)`;
+                setTimeout(() => {
+                    document.getElementById(`fill-${m}`).style.width = `${pct}%`;
+                }, 200);
+            });
+
+            // Gráfica de dona
+            if (graficaInstance) graficaInstance.destroy();
+            graficaInstance = new Chart(
+                document.getElementById('graficaPago').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Efectivo', 'Tarjeta', 'Yappy'],
+                    datasets: [{
+                        data: [
+                            data.metodoPagoConteo.efectivo,
+                            data.metodoPagoConteo.tarjeta,
+                            data.metodoPagoConteo.yappy
+                        ],
+                        backgroundColor: ['#22c55e', '#3b82f6', '#8b5cf6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 16 } },
+                        tooltip: {
+                            callbacks: { label: c => ` ${c.label}: ${c.raw} pedidos` }
+                        }
+                    }
+                }
+            });
+
+            // Ranking productos
+            document.getElementById('ranking-productos').innerHTML =
+                data.rankingProductos.map((p, i) => `
+                <div style="display:flex; justify-content:space-between; align-items:center;
+                            padding:10px 0; border-bottom:1px solid #f1f5f9; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="background:#ff512f; color:white; width:26px; height:26px;
+                                     border-radius:50%; display:flex; align-items:center;
+                                     justify-content:center; font-size:0.78rem; font-weight:700;
+                                     flex-shrink:0;">${i + 1}</span>
+                        <span style="font-weight:500; font-size:0.9rem;">${p.plato}</span>
+                    </div>
+                    <div style="text-align:right; flex-shrink:0;">
+                        <span style="font-weight:700; color:#ff512f;">B/.${p.ingreso.toFixed(2)}</span>
+                        <span style="color:#9ca3af; font-size:0.8rem; margin-left:6px;">×${p.cantidad}</span>
+                    </div>
+                </div>`).join('');
+
+            // Tabla detalle
+            const ICONOS = { efectivo: '💵', tarjeta: '💳', yappy: '📱' };
+            document.getElementById('tabla-pedidos').innerHTML = data.pedidos.map(p => {
+                const hora = p.completado_en
+                    ? new Date(p.completado_en).toLocaleTimeString('es-PA', { hour:'2-digit', minute:'2-digit' })
+                    : '—';
+                return `<tr>
+                    <td style="font-size:0.85rem; color:#6b7280;">${hora}</td>
+                    <td style="font-weight:600;">Mesa #${p.mesa}</td>
+                    <td>${p.plato}</td>
+                    <td style="font-size:0.82rem; color:#9ca3af;">${p.notas || '—'}</td>
+                    <td>${ICONOS[p.metodo_pago] || ''} ${p.metodo_pago || '—'}</td>
+                    <td style="font-weight:700; color:#ff512f;">B/.${(p.precio||0).toFixed(2)}</td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('tabla-total').textContent = `B/.${data.totalVentas.toFixed(2)}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', cargarReporte);
+    </script>
+
+    <style>
+        @media print {
+            header, .btn-flotante, button { display: none !important; }
+            main { padding: 0 !important; }
+            .card { box-shadow: none !important; border: 1px solid #e2e8f0 !important; }
+        }
+    </style>
+
+</body>
+</html>

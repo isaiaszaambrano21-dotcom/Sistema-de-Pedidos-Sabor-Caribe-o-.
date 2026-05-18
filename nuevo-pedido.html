@@ -55,6 +55,40 @@
                             margin-top:8px; font-size:0.9rem; text-align:center;">
                 </div>
 
+                <label>Método de Pago</label>
+                <div style="display:flex; gap:10px; margin-top:10px; margin-bottom:10px; flex-wrap:wrap;">
+                    <label id="btn-efectivo"
+                        style="flex:1; min-width:80px; display:flex; flex-direction:column;
+                               align-items:center; gap:6px; padding:14px 10px;
+                               border:2px solid #e2e8f0; border-radius:14px; cursor:pointer;
+                               transition:all 0.2s; background:#f8fafc;">
+                        <input type="radio" name="metodo_pago" value="efectivo"
+                               style="display:none;" onchange="seleccionarPago('efectivo')">
+                        <span style="font-size:1.6rem;">💵</span>
+                        <span style="font-size:0.85rem; font-weight:600;">Efectivo</span>
+                    </label>
+                    <label id="btn-tarjeta"
+                        style="flex:1; min-width:80px; display:flex; flex-direction:column;
+                               align-items:center; gap:6px; padding:14px 10px;
+                               border:2px solid #e2e8f0; border-radius:14px; cursor:pointer;
+                               transition:all 0.2s; background:#f8fafc;">
+                        <input type="radio" name="metodo_pago" value="tarjeta"
+                               style="display:none;" onchange="seleccionarPago('tarjeta')">
+                        <span style="font-size:1.6rem;">💳</span>
+                        <span style="font-size:0.85rem; font-weight:600;">Tarjeta</span>
+                    </label>
+                    <label id="btn-yappy"
+                        style="flex:1; min-width:80px; display:flex; flex-direction:column;
+                               align-items:center; gap:6px; padding:14px 10px;
+                               border:2px solid #e2e8f0; border-radius:14px; cursor:pointer;
+                               transition:all 0.2s; background:#f8fafc;">
+                        <input type="radio" name="metodo_pago" value="yappy"
+                               style="display:none;" onchange="seleccionarPago('yappy')">
+                        <span style="font-size:1.6rem;">📱</span>
+                        <span style="font-size:0.85rem; font-weight:600;">Yappy</span>
+                    </label>
+                </div>
+
                 <label>Notas Especiales</label>
                 <textarea id="notas"
                     placeholder="Personalización o notas para la cocina..."
@@ -75,15 +109,12 @@
 
     <script src="auth.js"></script>
     <script>
-        // ── Verificar sesión ──
         const usuario = Auth.requerir('gerente', 'administrador', 'mesero');
         if (!usuario) throw new Error('Sin acceso');
 
         Auth.mostrarUsuario();
-
         const rol = usuario.rol;
 
-        // ── Menú según rol ──
         const menus = {
             gerente:       ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','nuevo-pedido.html|Nuevo Pedido','ajustes.html|Ajustes'],
             administrador: ['vision.html|Resumen','productos.html|Productos','ordenes.html|Órdenes','nuevo-pedido.html|Nuevo Pedido','ajustes.html|Ajustes'],
@@ -106,16 +137,38 @@
             msgBox.style.display    = 'block';
         }
 
-        // ── Cargar productos desde Supabase ──
+        // ── Seleccionar método de pago visualmente ──
+        function seleccionarPago(metodo) {
+            ['efectivo', 'tarjeta', 'yappy'].forEach(m => {
+                const btn = document.getElementById(`btn-${m}`);
+                if (m === metodo) {
+                    btn.style.borderColor = '#ff512f';
+                    btn.style.background  = '#fff5f0';
+                } else {
+                    btn.style.borderColor = '#e2e8f0';
+                    btn.style.background  = '#f8fafc';
+                }
+            });
+        }
+
+        // ── Mostrar precio al seleccionar plato ──
+        document.getElementById('plato').addEventListener('change', function() {
+            const precioDiv = document.getElementById('precio-estimado');
+            if (!this.value) { precioDiv.style.display = 'none'; return; }
+            const [, precio] = this.value.split('|');
+            precioDiv.textContent   = `Precio estimado: B/.${parseFloat(precio).toFixed(2)}`;
+            precioDiv.style.display = 'block';
+        });
+
+        // ── Cargar productos ──
         async function cargarProductos() {
             const data = await Auth.fetch('/api/productos');
             if (!data || !data.success) return;
 
-            const select = document.getElementById('plato');
+            const select      = document.getElementById('plato');
             const disponibles = data.productos.filter(p => p.disponible);
+            const categorias  = {};
 
-            // Agrupar por categoría
-            const categorias = {};
             disponibles.forEach(p => {
                 const cat = p.categoria || 'otros';
                 if (!categorias[cat]) categorias[cat] = [];
@@ -126,35 +179,32 @@
                 const group = document.createElement('optgroup');
                 group.label = cat.charAt(0).toUpperCase() + cat.slice(1);
                 prods.forEach(p => {
-                    const opt = document.createElement('option');
+                    const opt       = document.createElement('option');
                     opt.value       = `${p.nombre}|${p.precio}`;
-                    opt.textContent = `${p.nombre} — B/.${p.precio.toFixed(2)}`;
+                    opt.textContent = `${p.nombre} — B/.${parseFloat(p.precio).toFixed(2)}`;
                     group.appendChild(opt);
                 });
                 select.appendChild(group);
             });
         }
 
-        // ── Mostrar precio al seleccionar ──
-        document.getElementById('plato').addEventListener('change', function() {
-            const precioDiv = document.getElementById('precio-estimado');
-            if (!this.value) { precioDiv.style.display = 'none'; return; }
-            const [, precio] = this.value.split('|');
-            precioDiv.textContent  = `Precio estimado: B/.${parseFloat(precio).toFixed(2)}`;
-            precioDiv.style.display = 'block';
-        });
-
         // ── Enviar pedido ──
         document.getElementById('formPedido').addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            const mesa  = document.getElementById('mesa').value;
-            const val   = document.getElementById('plato').value;
-            const notas = document.getElementById('notas').value.trim();
-            const btn   = document.getElementById('btnEnviar');
+            const mesa        = document.getElementById('mesa').value;
+            const val         = document.getElementById('plato').value;
+            const notas       = document.getElementById('notas').value.trim();
+            const metodoPago  = document.querySelector('input[name="metodo_pago"]:checked')?.value;
+            const btn         = document.getElementById('btnEnviar');
 
             if (!mesa || !val) {
                 mostrarMensaje('Por favor completa mesa y plato.', 'error');
+                return;
+            }
+
+            if (!metodoPago) {
+                mostrarMensaje('Por favor selecciona el método de pago.', 'error');
                 return;
             }
 
@@ -165,13 +215,20 @@
 
             const data = await Auth.fetch('/api/pedidos', {
                 method: 'POST',
-                body:   JSON.stringify({ mesa: parseInt(mesa), plato, precio: parseFloat(precio), notas })
+                body:   JSON.stringify({
+                    mesa:         parseInt(mesa),
+                    plato,
+                    precio:       parseFloat(precio),
+                    notas,
+                    metodo_pago:  metodoPago
+                })
             });
 
             if (data && data.success) {
                 mostrarMensaje('✅ Pedido enviado a cocina.', 'ok');
                 document.getElementById('formPedido').reset();
                 document.getElementById('precio-estimado').style.display = 'none';
+                seleccionarPago(''); // limpiar selección visual
                 setTimeout(() => window.location.href = 'ordenes.html', 1200);
             } else {
                 mostrarMensaje(data?.mensaje || 'Error al enviar pedido.', 'error');
