@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cocina - Sabor Caribeño</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Sabor Caribeño</h1>
+        <div class="perfil-usuario">
+            <img src="logo.png" alt="Logo">
+            <div class="info-user">
+                <p><strong id="nombre-header">Cargando...</strong></p>
+                <small id="rol-header">Cocinero</small>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="cocina.html" class="active">Cocina</a></li>
+                <li><a href="productos.html">Menú</a></li>
+            </ul>
+        </nav>
+        <button onclick="Auth.cerrar()"
+            style="margin-top:20px; background:#ef4444; color:white; border:none;
+                   padding:12px; border-radius:14px; font-weight:700; cursor:pointer; width:100%;">
+            Cerrar sesión
+        </button>
+    </header>
+
+    <main>
+
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+            <h2>🍳 Órdenes en Cocina</h2>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <span id="badge-total"
+                      style="background:#3b82f6; color:white; padding:6px 16px;
+                             border-radius:20px; font-size:0.85rem; font-weight:600;">
+                    0 órdenes
+                </span>
+                <span id="badge-pendientes"
+                      style="background:#f59e0b; color:white; padding:6px 16px;
+                             border-radius:20px; font-size:0.85rem; font-weight:600;">
+                    0 pendientes
+                </span>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+            <button onclick="filtrarEstado('todos')" id="btn-todos"
+                style="padding:8px 18px; border-radius:20px; border:2px solid #3b82f6;
+                       background:#3b82f6; color:white; cursor:pointer; font-weight:600; font-size:0.85rem;">
+                Todos
+            </button>
+            <button onclick="filtrarEstado('en-proceso')" id="btn-en-proceso"
+                style="padding:8px 18px; border-radius:20px; border:2px solid #f59e0b;
+                       background:white; color:#f59e0b; cursor:pointer; font-weight:600; font-size:0.85rem;">
+                🟡 En Proceso
+            </button>
+            <button onclick="filtrarEstado('preparando')" id="btn-preparando"
+                style="padding:8px 18px; border-radius:20px; border:2px solid #3b82f6;
+                       background:white; color:#3b82f6; cursor:pointer; font-weight:600; font-size:0.85rem;">
+                🔵 Preparando
+            </button>
+        </div>
+
+        <div id="sin-ordenes"
+             style="display:none; text-align:center; padding:60px 20px; color:#6b7280;">
+            <p style="font-size:3rem; margin-bottom:10px;">🍽️</p>
+            <p style="font-size:1.1rem; font-weight:600;">No hay órdenes activas.</p>
+            <p style="font-size:0.9rem; margin-top:6px;">Las nuevas órdenes aparecerán aquí automáticamente.</p>
+        </div>
+
+        <div id="contenedor-ordenes"
+             style="display:grid; gap:18px;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"></div>
+
+    </main>
+
+    <script src="auth.js"></script>
+    <script>
+        // ── Verificar sesión — solo cocinero ──
+        const usuario = Auth.requerir('cocinero');
+        if (!usuario) throw new Error('Sin acceso');
+
+        Auth.mostrarUsuario();
+
+        let todosPedidos = [];
+        let filtroActual = 'todos';
+
+        const COLORES = {
+            'en-proceso': '#f59e0b',
+            'preparando': '#3b82f6',
+            'listo':      '#22c55e'
+        };
+
+        // ── Temporizador por pedido ──
+        function tiempoTranscurrido(fechaISO) {
+            const diff = Math.floor((Date.now() - new Date(fechaISO)) / 1000);
+            if (diff < 60)  return `${diff}s`;
+            if (diff < 3600) return `${Math.floor(diff / 60)}min`;
+            return `${Math.floor(diff / 3600)}h`;
+        }
+
+        function colorTiempo(fechaISO) {
+            const diff = Math.floor((Date.now() - new Date(fechaISO)) / 60000);
+            if (diff < 10) return '#22c55e';
+            if (diff < 20) return '#f59e0b';
+            return '#ef4444';
+        }
+
+        // ── Filtrar pedidos ──
+        function filtrarEstado(estado) {
+            filtroActual = estado;
+
+            // Actualizar botones
+            ['todos', 'en-proceso', 'preparando'].forEach(e => {
+                const btn = document.getElementById(`btn-${e}`);
+                if (!btn) return;
+                const colores = { 'todos': '#3b82f6', 'en-proceso': '#f59e0b', 'preparando': '#3b82f6' };
+                const color   = colores[e] || '#3b82f6';
+                if (e === estado) {
+                    btn.style.background = color;
+                    btn.style.color      = 'white';
+                } else {
+                    btn.style.background = 'white';
+                    btn.style.color      = color;
+                }
+            });
+
+            const filtrados = estado === 'todos'
+                ? todosPedidos
+                : todosPedidos.filter(p => p.estado === estado);
+
+            renderOrdenes(filtrados);
+        }
+
+        // ── Renderizar órdenes ──
+        function renderOrdenes(pedidos) {
+            const contenedor = document.getElementById('contenedor-ordenes');
+            const sinOrdenes = document.getElementById('sin-ordenes');
+
+            // Badges
+            const pendientes = todosPedidos.filter(p => p.estado === 'en-proceso').length;
+            document.getElementById('badge-total').textContent     = `${todosPedidos.length} órdenes`;
+            document.getElementById('badge-pendientes').textContent = `${pendientes} pendientes`;
+
+            if (pedidos.length === 0) {
+                sinOrdenes.style.display   = 'block';
+                contenedor.style.display   = 'none';
+                return;
+            }
+
+            sinOrdenes.style.display = 'none';
+            contenedor.style.display = 'grid';
+
+            contenedor.innerHTML = pedidos.map(p => {
+                const color  = COLORES[p.estado] || '#9ca3af';
+                const hora   = new Date(p.creado_en).toLocaleTimeString('es-PA', { hour: '2-digit', minute: '2-digit' });
+                const tiempo = tiempoTranscurrido(p.creado_en);
+                const colorT = colorTiempo(p.creado_en);
+
+                let boton = '';
+                if (p.estado === 'en-proceso') {
+                    boton = `
+                    <button onclick="cambiarEstado('${p.id}', 'preparando')"
+                        style="width:100%; background:#3b82f6; color:white; border:none;
+                               padding:12px; border-radius:12px; font-weight:700;
+                               cursor:pointer; font-size:0.9rem;">
+                        🔵 Iniciar Preparación
+                    </button>`;
+                } else if (p.estado === 'preparando') {
+                    boton = `
+                    <button onclick="cambiarEstado('${p.id}', 'listo')"
+                        style="width:100%; background:#22c55e; color:white; border:none;
+                               padding:12px; border-radius:12px; font-weight:700;
+                               cursor:pointer; font-size:0.9rem;">
+                        ✅ Marcar como Listo
+                    </button>`;
+                } else if (p.estado === 'listo') {
+                    boton = `
+                    <div style="width:100%; background:#f0fdf4; border:2px solid #86efac;
+                                padding:12px; border-radius:12px; text-align:center;
+                                color:#166534; font-weight:700; font-size:0.9rem;">
+                        ✅ Listo — Esperando mesero
+                    </div>`;
+                }
+
+                return `
+                <article class="card" style="border-left:5px solid ${color}; position:relative;">
+
+                    <!-- Tiempo transcurrido -->
+                    <div style="position:absolute; top:16px; right:16px;
+                                background:${colorT}22; color:${colorT};
+                                padding:4px 10px; border-radius:20px;
+                                font-size:0.78rem; font-weight:700;">
+                        ⏱ ${tiempo}
+                    </div>
+
+                    <h3 style="font-size:1.3rem; margin-bottom:6px;">Mesa #${p.mesa}</h3>
+
+                    <p style="font-size:1rem; font-weight:700; margin-bottom:6px;
+                              color:#1a1a1a;">${p.plato}</p>
+
+                    ${p.notas ? `
+                    <div style="background:#fefce8; border:1px solid #fde68a; border-radius:10px;
+                                padding:8px 12px; margin-bottom:10px; font-size:0.85rem; color:#92400e;">
+                        📝 ${p.notas}
+                    </div>` : ''}
+
+                    <div style="display:flex; justify-content:space-between; align-items:center;
+                                margin-bottom:14px;">
+                        <span style="font-size:0.8rem; color:#9ca3af;">🕐 ${hora}</span>
+                        <span style="font-size:0.8rem; background:${color}22; color:${color};
+                                     padding:3px 10px; border-radius:20px; font-weight:600;">
+                            ${p.estado === 'en-proceso' ? '🟡 En Proceso' :
+                              p.estado === 'preparando'  ? '🔵 Preparando'  : '✅ Listo'}
+                        </span>
+                    </div>
+
+                    ${p.mesero_nombre ? `
+                    <p style="font-size:0.78rem; color:#9ca3af; margin-bottom:12px;">
+                        👤 Mesero: ${p.mesero_nombre}
+                    </p>` : ''}
+
+                    ${boton}
+
+                </article>`;
+            }).join('');
+        }
+
+        // ── Cambiar estado ──
+        async function cambiarEstado(id, estado) {
+            const data = await Auth.fetch(`/api/pedidos/${id}/estado`, {
+                method: 'PATCH',
+                body:   JSON.stringify({ estado })
+            });
+            if (data && data.success) cargarOrdenes();
+        }
+
+        // ── Cargar órdenes ──
+        async function cargarOrdenes() {
+            const data = await Auth.fetch('/api/pedidos');
+            if (!data || !data.success) return;
+            todosPedidos = data.pedidos;
+            filtrarEstado(filtroActual);
+        }
+
+        // ── Actualizar temporizadores cada minuto ──
+        setInterval(() => {
+            if (todosPedidos.length > 0) filtrarEstado(filtroActual);
+        }, 60000);
+
+        // ── WebSocket — recibir nuevos pedidos ──
+        Notif.conectar();
+        Notif.on('nuevo-pedido', () => cargarOrdenes());
+
+        document.addEventListener('DOMContentLoaded', cargarOrdenes);
+    </script>
+
+</body>
+</html>
